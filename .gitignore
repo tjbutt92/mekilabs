@@ -15,3 +15,8 @@ Thumbs.db
 node_modules/
 
 .vscode
+
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
