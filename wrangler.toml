@@ -1,5 +1,0 @@
-name = "meki-labs"
-compatibility_date = "2026-03-22"
-
-[site]
-bucket = "./"
