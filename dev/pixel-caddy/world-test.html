@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Creation Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: system-ui, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            overflow: hidden;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        #info h2 { margin-bottom: 10px; color: #5cb85c; }
+        #info p { margin: 5px 0; }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 100;
+        }
+        #controls p { font-size: 12px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="info">
+        <h2>World Creation Test</h2>
+        <p id="course-name">Loading...</p>
+        <p id="hole-info"></p>
+        <p id="ball-pos"></p>
+    </div>
+    <div id="controls">
+        <p>Drag to rotate | Scroll to zoom | Right-drag to pan</p>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { World, createWorld } from './js/world.js';
+        import { course } from './courses/test_course.js';
+
+        // Scene setup
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb); // Sky blue
+
+        // Camera - position will be set after world loads
+        const camera = new THREE.PerspectiveCamera(
+            60,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            2000
+        );
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            logarithmicDepthBuffer: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2.1;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        sunLight.position.set(100, 200, 50);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 10;
+        sunLight.shadow.camera.far = 500;
+        sunLight.shadow.camera.left = -200;
+        sunLight.shadow.camera.right = 200;
+        sunLight.shadow.camera.top = 200;
+        sunLight.shadow.camera.bottom = -200;
+        scene.add(sunLight);
+
+        // Create world
+        const world = createWorld(scene);
+        world.loadCourse(course);
+        world.setHole(1);
+
+        // Update info
+        document.getElementById('course-name').textContent = `Course: ${course.name}`;
+        const hole = world.currentHole;
+        if (hole) {
+            document.getElementById('hole-info').textContent = 
+                `Hole ${hole.number}: Par ${hole.par}, ${hole.yards} yards`;
+            
+            const ballPos = world.getBallStartPosition();
+            document.getElementById('ball-pos').textContent = 
+                `Tee: (${hole.tee.x.toFixed(1)}, ${hole.tee.y.toFixed(1)})`;
+        }
+
+        // Create a golf ball at tee position
+        // Golf ball is ~1.68 inches diameter. At WORLD_SCALE=4 (yards to 3D units), 
+        // 1 yard = 4 units, so 1.68 inches = 0.047 yards = 0.19 units radius
+        const ballGeom = new THREE.SphereGeometry(0.2, 16, 16);
+        const ballMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+        const ball = new THREE.Mesh(ballGeom, ballMat);
+        const startPos = world.getBallStartPosition();
+        ball.position.set(startPos.x, startPos.y + 0.1, startPos.z); // Slightly above tee
+        ball.castShadow = true;
+        scene.add(ball);
+
+        // Add a tee under the ball
+        const teeGeom = new THREE.CylinderGeometry(0.05, 0.08, 0.4, 8);
+        const teeMat = new THREE.MeshLambertMaterial({ color: 0xf5deb3 }); // Wheat color
+        const tee = new THREE.Mesh(teeGeom, teeMat);
+        tee.position.set(startPos.x, startPos.y + 0.1, startPos.z);
+        scene.add(tee);
+
+        // Position camera behind ball, looking toward hole
+        const holePos = world.getHolePosition();
+        
+        // Calculate direction from tee to hole
+        const dirX = holePos.x - startPos.x;
+        const dirZ = holePos.z - startPos.z;
+        const dist = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        const normX = dirX / dist;
+        const normZ = dirZ / dist;
+        
+        // Camera behind ball (opposite direction to hole), elevated
+        const cameraDistance = 15; // Distance behind ball
+        const cameraHeight = 8;    // Height above ball
+        camera.position.set(
+            startPos.x - normX * cameraDistance,
+            startPos.y + cameraHeight,
+            startPos.z - normZ * cameraDistance
+        );
+        
+        // Look at a point slightly ahead of the ball
+        controls.target.set(
+            startPos.x + normX * 5,
+            startPos.y,
+            startPos.z + normZ * 5
+        );
+
+        // Animation loop
+        function animate(time) {
+            requestAnimationFrame(animate);
+            
+            // Update world (tree sway)
+            world.update(time * 0.001);
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate(0);
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

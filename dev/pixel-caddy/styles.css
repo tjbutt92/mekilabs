@@ -1,0 +1,2719 @@
+/* ============================================
+   GOLF CADDY GAME - UNIFIED CSS DESIGN SYSTEM
+   ============================================ */
+
+/* Local pixel font */
+@font-face {
+    font-family: 'Visitor';
+    src: url('fonts/visitor2.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* CSS Custom Properties - Single source of truth */
+:root {
+    /* Colors - Primary */
+    --color-bg-dark: #1a1a2e;
+    --color-bg-primary: #1e1e1e;
+    --color-bg-secondary: #2a2a2a;
+    --color-bg-tertiary: #3a3a3a;
+    --color-bg-hover: #4a4a4a;
+    --color-bg-bar: #111;
+    
+    /* Colors - Golf terrain */
+    --color-fairway: #3d6b35;
+    --color-rough: #022906;
+    --color-tee: #4a7c43;
+    --color-green: #5cb85c;
+    --color-bunker: #e8d4a8;
+    --color-water: #3498db;
+    
+    /* Colors - UI accents */
+    --color-accent-green: #5cb85c;
+    --color-accent-red: #e74c3c;
+    --color-accent-blue: #3498db;
+    --color-accent-purple: #9b59b6;
+    --color-accent-orange: #f39c12;
+    --color-accent-yellow: #f0ad4e;
+    
+    /* Colors - Text */
+    --color-text-primary: #fff;
+    --color-text-secondary: #ccc;
+    --color-text-muted: #888;
+    --color-text-dim: #666;
+    
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 12px;
+    --space-lg: 16px;
+    --space-xl: 20px;
+    
+    /* Border radius - All set to 0 for pixel theme square corners */
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-lg: 0;
+    --radius-xl: 0;
+    --radius-round: 0;
+    
+    /* Typography - Pixel Font */
+    --pixel-font: "Visitor", monospace;
+    --font-family: var(--pixel-font);
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-md: 16px;
+    --font-size-base: 18px;
+    --font-size-lg: 20px;
+    --font-size-xl: 24px;
+    --font-size-display: 64px;
+    
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+}
+
+/* ============================================
+   RESET & BASE STYLES
+   ============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--color-bg-dark);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: var(--font-family);
+    color: var(--color-text-primary);
+}
+
+/* ============================================
+   LAYOUT COMPONENTS
+   ============================================ */
+.game-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    height: 100vh;
+    max-height: 800px;
+}
+
+.golf-hole {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    background-color: var(--color-bg-dark);
+    overflow: hidden;
+}
+
+/* ============================================
+   BUTTON SYSTEM
+   ============================================ */
+.button-bar {
+    display: flex;
+    width: 100%;
+    background-color: var(--color-bg-bar);
+    padding: var(--space-sm) var(--space-xs);
+    gap: var(--space-xs);
+}
+
+.action-btn,
+.yardage-tab-btn {
+    padding: var(--space-base, 14px) var(--space-sm);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-md);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.action-btn { flex: 1; }
+.yardage-tab-btn { padding: var(--space-sm) var(--space-md); font-size: var(--font-size-md); }
+
+.action-btn:active,
+.yardage-tab-btn:active { background-color: var(--color-bg-tertiary); }
+.action-btn:focus,
+.yardage-tab-btn:focus { outline: none; }
+
+/* ============================================
+   TERRAIN ZONES
+   ============================================ */
+.terrain-zone {
+    position: absolute;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
+    transform-style: preserve-3d;
+}
+
+/* Elevation grid cells */
+.elevation-cell {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+}
+
+/* Add depth gradient to terrain based on position */
+.terrain-zone[data-terrain="fairway"] {
+    background-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.1) 0%,
+        transparent 30%,
+        rgba(255, 255, 255, 0.05) 100%
+    );
+    background-blend-mode: overlay;
+}
+
+.terrain-zone[data-terrain="rough"] {
+}
+
+.terrain-zone[data-terrain="tee"] {
+}
+
+.terrain-zone[data-terrain="green"] {
+    box-shadow: 
+        inset 0 2px 10px rgba(0, 0, 0, 0.2),
+        0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.terrain-zone[data-terrain="bunker"] {
+    box-shadow: 
+        inset 0 3px 12px rgba(0, 0, 0, 0.25),
+        inset 0 -2px 6px rgba(255, 255, 255, 0.3);
+}
+
+.terrain-zone[data-terrain="water"] {
+    box-shadow: 
+        inset 0 0 20px rgba(0, 0, 0, 0.3);
+    background-image: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.1) 100%
+    );
+    background-blend-mode: overlay;
+}
+
+/* ============================================
+   FLAG & HOLE
+   ============================================ */
+.flag-container {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    transform-style: preserve-3d;
+}
+
+.hole-cup {
+    position: absolute;
+    width: 12px;
+    height: 8px;
+    background-color: var(--color-bg-dark);
+    border-radius: 50%;
+    border: 2px solid var(--color-text-primary);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotateX(-45deg);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.flag-pole {
+    position: absolute;
+    width: 2px;
+    height: 35px;
+    background: linear-gradient(to bottom, #555, #222);
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 6px;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.3);
+}
+
+.flag-cloth {
+    position: absolute;
+    width: 20px;
+    height: 12px;
+    background: linear-gradient(135deg, var(--color-accent-red) 0%, #c0392b 100%);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+    left: calc(50% + 1px);
+    bottom: 29px;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   BALL & SHADOW (hidden - 3D renderer handles this)
+   ============================================ */
+.ball-shadow {
+    display: none;
+}
+
+.ball {
+    display: none;
+}
+
+/* ============================================
+   MODAL SYSTEM
+   ============================================ */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    z-index: 100;
+}
+
+.modal {
+    background-color: var(--color-bg-primary);
+    width: 100%;
+    max-width: 400px;
+    max-height: 70vh;
+    border-radius: 0;
+    padding: var(--space-xl);
+    overflow-y: auto;
+}
+
+.modal-title {
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: var(--space-lg);
+}
+
+.yardage-modal { max-height: 85vh; }
+
+/* ============================================
+   LIST COMPONENTS
+   ============================================ */
+.club-list,
+.shape-list,
+.clubs-list-expandable {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.shape-list { gap: var(--space-sm); }
+
+/* List items - shared base */
+.club-item,
+.shape-item {
+    padding: var(--space-base, 14px) var(--space-lg);
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.club-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shape-item {
+    padding: var(--space-xl, 18px);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-lg);
+    text-align: center;
+}
+
+.club-item:active,
+.shape-item:active { background-color: var(--color-bg-tertiary); }
+
+.club-item.selected,
+.shape-item.selected { background-color: var(--color-fairway); }
+
+.club-name { color: var(--color-text-primary); font-size: 15px; font-weight: 500; }
+.club-yards { color: var(--color-text-muted); font-size: var(--font-size-base); }
+.club-item.selected .club-yards { color: #aaa; }
+
+/* ============================================
+   POWER SLIDER
+   ============================================ */
+.power-display {
+    color: var(--color-text-primary);
+    font-size: var(--font-size-display);
+    font-weight: 600;
+    text-align: center;
+    margin: var(--space-xl) 0;
+}
+
+.power-slider {
+    width: 100%;
+    height: 40px;
+    -webkit-appearance: none;
+    background: transparent;
+    margin: 10px 0;
+}
+
+.power-slider::-webkit-slider-track {
+    height: 8px;
+    background: var(--color-bg-secondary);
+    border-radius: 0;
+}
+
+.power-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px;
+    height: 28px;
+    background: var(--color-accent-green);
+    border-radius: 0;
+    cursor: pointer;
+    margin-top: -10px;
+}
+
+.power-slider::-moz-range-track {
+    height: 8px;
+    background: var(--color-bg-secondary);
+    border-radius: 0;
+}
+
+.power-slider::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    background: var(--color-accent-green);
+    border-radius: 0;
+    cursor: pointer;
+    border: none;
+}
+
+.power-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--color-text-dim);
+    font-size: var(--font-size-md);
+    padding: 0 var(--space-xs);
+}
+
+/* ============================================
+   AIM LINE (hidden - needs 3D version)
+   ============================================ */
+.aim-line {
+    display: none;
+}
+
+.aim-mode .golf-hole { cursor: crosshair; }
+.aim-mode .action-btn#btn-aim { background-color: var(--color-fairway); }
+
+/* ============================================
+   TEE MARKERS
+   ============================================ */
+.tee-marker {
+    position: absolute;
+    width: 6px;
+    height: 4px;
+    background: linear-gradient(to bottom, #fff 0%, #ccc 100%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) rotateX(-45deg);
+    opacity: 0.9;
+    z-index: 5;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   YARDAGE BOOK - MAP
+   ============================================ */
+.yardage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.yardage-header-compact {
+    text-align: center;
+    padding: var(--space-xs) 0;
+    margin-bottom: var(--space-xs);
+}
+
+.hole-info-compact {
+    color: var(--color-accent-green);
+    font-size: var(--font-size-md);
+    font-weight: 500;
+}
+
+/* Yardage Book Overlay Modal */
+.yardage-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--color-bg-primary);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 0;
+}
+
+/* Tab Bar Container */
+.yardage-tabs {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    background-color: var(--color-bg-secondary);
+    padding: var(--space-sm) var(--space-sm);
+    border-bottom: 1px solid var(--color-bg-tertiary);
+    flex-shrink: 0;
+}
+
+/* Tab Button Styles */
+.tab-btn {
+    flex: 1;
+    padding: var(--space-md) var(--space-sm);
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    color: var(--color-text-muted);
+    font-family: var(--font-family);
+    font-size: var(--font-size-md);
+    font-weight: 500;
+    cursor: pointer;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+    position: relative;
+    text-transform: capitalize;
+}
+
+.tab-btn:hover {
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-tertiary);
+}
+
+.tab-btn:focus {
+    outline: none;
+}
+
+/* Active Tab Indicator */
+.tab-btn.active {
+    color: var(--color-accent-green);
+    background-color: var(--color-bg-tertiary);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: var(--space-sm);
+    right: var(--space-sm);
+    height: 3px;
+    background-color: var(--color-accent-green);
+    border-radius: 0;
+}
+
+/* Yardage Content Area */
+.yardage-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-bg-primary);
+    border-radius: 0;
+}
+
+/* Swipe Indicator */
+.swipe-indicator {
+    text-align: center;
+    padding: var(--space-sm);
+    color: var(--color-text-dim);
+    font-size: var(--font-size-sm);
+    background-color: var(--color-bg-secondary);
+    flex-shrink: 0;
+}
+
+.yardage-close-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    padding: var(--space-sm) var(--space-md);
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: color var(--transition-fast);
+}
+
+.yardage-close-btn:hover { color: var(--color-text-primary); }
+
+.yardage-map-container {
+    background-color: var(--color-bg-bar);
+    border-radius: var(--radius-lg);
+    padding: 10px;
+}
+
+.yardage-map-hole {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 180px);
+    min-height: 400px;
+    background-color: #1a3d1a;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.yardage-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.yardage-fallback {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
+.yardage-overlay-svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.yardage-map-zone { pointer-events: none; }
+
+.yardage-map-tee {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background-color: var(--color-text-primary);
+    border-radius: var(--radius-round);
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+.yardage-map-flag {
+    position: absolute;
+    width: 0;
+    height: 0;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+.yardage-map-flag::before {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 20px;
+    background-color: #333;
+    left: -1px;
+    bottom: 0;
+}
+
+.yardage-map-flag::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 8px;
+    background-color: var(--color-accent-red);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+    left: 1px;
+    bottom: 12px;
+}
+
+/* ============================================
+   YARDAGE SPOTS
+   ============================================ */
+.yardage-spot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 15;
+}
+
+.yardage-spot-label {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 2px var(--space-xs);
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.yardage-spot-green .yardage-spot-label { background-color: rgba(92, 184, 92, 0.9); }
+.yardage-spot-pin .yardage-spot-label { background-color: rgba(231, 76, 60, 0.9); }
+.yardage-spot-bunker .yardage-spot-label { background-color: rgba(180, 160, 100, 0.9); color: #333; }
+
+/* ============================================
+   TREES ON YARDAGE BOOK
+   ============================================ */
+.yardage-map-tree {
+    z-index: 20;
+    filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.4));
+}
+
+.yardage-map-tree svg {
+    overflow: visible;
+}
+
+/* Trees on 2D hole view */
+.hole-tree {
+    filter: drop-shadow(1px 2px 3px rgba(0, 0, 0, 0.5));
+}
+.yardage-spot-water .yardage-spot-label { background-color: rgba(52, 152, 219, 0.9); }
+
+.yardage-spot-marker .yardage-spot-label {
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    font-size: var(--font-size-base);
+}
+
+.yardage-spot-bunker-carry .yardage-spot-label,
+.yardage-spot-water-carry .yardage-spot-label {
+    background-color: rgba(0, 0, 0, 0.6);
+    font-size: var(--font-size-base);
+}
+
+/* ============================================
+   YARDAGE BOOK REFERENCE MARKERS
+   ============================================ */
+.yardage-ref-marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 25;
+    pointer-events: none;
+}
+
+.yardage-ref-marker svg {
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* Tee marker circles - orange tint */
+.yardage-circles-svg text {
+    font-family: var(--font-family);
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================
+   COURSE STATS PAGE
+   ============================================ */
+.course-stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.course-section {
+    background-color: var(--color-bg-secondary);
+    border-radius: 0;
+    padding: var(--space-md);
+}
+
+.course-section h3 {
+    color: var(--color-accent-green);
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 var(--space-sm) 0;
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--color-bg-tertiary);
+}
+
+.wind-display {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-sm);
+}
+
+.wind-arrow {
+    flex-shrink: 0;
+}
+
+.wind-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.wind-speed {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.wind-direction {
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
+}
+
+.course-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-md);
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-xs) 0;
+}
+
+.detail-label {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-base);
+}
+
+.detail-value {
+    color: var(--color-text-primary);
+    font-weight: 500;
+    font-size: var(--font-size-base);
+}
+
+.hole-list {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.hole-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.hole-table th {
+    text-align: left;
+    color: var(--color-text-muted);
+    font-weight: 500;
+    padding: var(--space-xs) var(--space-sm);
+    border-bottom: 1px solid var(--color-bg-tertiary);
+}
+
+.hole-table td {
+    padding: var(--space-xs) var(--space-sm);
+    color: var(--color-text-secondary);
+}
+
+.hole-table tr:nth-child(even) {
+    background-color: var(--color-bg-primary);
+}
+
+.leaderboard {
+    min-height: 80px;
+}
+
+.leaderboard-empty {
+    color: var(--color-text-dim);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    padding: var(--space-lg);
+}
+
+/* ============================================
+   STAT SECTIONS
+   ============================================ */
+.golfer-stats { display: flex; flex-direction: column; gap: var(--space-md); }
+
+.stat-section {
+    background-color: var(--color-bg-secondary);
+    border-radius: 0;
+    padding: var(--space-md);
+}
+
+.stat-title {
+    color: var(--color-accent-green);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    padding: var(--space-xs) 0;
+}
+
+.stat-value { color: var(--color-text-primary); font-weight: 500; }
+
+.stat-bar {
+    height: 4px;
+    background-color: var(--color-bg-dark);
+    border-radius: 2px;
+    margin-top: var(--space-sm);
+    overflow: hidden;
+}
+
+.stat-bar-fill { height: 100%; border-radius: 2px; }
+.stat-bar-fill.distance { background-color: var(--color-accent-blue); }
+.stat-bar-fill.direction { background-color: var(--color-accent-purple); }
+
+/* ============================================
+   MENTAL STATE
+   ============================================ */
+.mental-state-display { margin-bottom: var(--space-md); }
+
+.mental-meter {
+    height: 8px;
+    background-color: var(--color-bg-dark);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: var(--space-xs);
+}
+
+.mental-meter-fill {
+    height: 100%;
+    background-color: var(--color-accent-purple);
+    border-radius: var(--radius-sm);
+    transition: width var(--transition-normal);
+}
+
+.mental-meter.pressure .mental-meter-fill { background-color: var(--color-accent-red); }
+.mental-meter.focus .mental-meter-fill { background-color: var(--color-accent-blue); }
+.mental-meter.trust .mental-meter-fill { background-color: var(--color-accent-yellow); }
+
+.mental-label { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.mental-label.confidence { color: var(--color-accent-purple); }
+.mental-label.pressure { color: var(--color-accent-red); }
+.mental-label.focus { color: var(--color-accent-blue); }
+.mental-label.trust { color: var(--color-accent-yellow); }
+
+.mental-effects { display: flex; flex-direction: column; gap: var(--space-md); }
+
+.mental-effect {
+    padding: var(--space-sm) 10px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-md);
+}
+
+.mental-effect.positive { background-color: rgba(92, 184, 92, 0.2); color: var(--color-accent-green); }
+.mental-effect.negative { background-color: rgba(231, 76, 60, 0.2); color: var(--color-accent-red); }
+.mental-effect.neutral { background-color: var(--color-bg-primary); color: var(--color-text-muted); }
+
+/* ============================================
+   RECENT SHOTS
+   ============================================ */
+.recent-shots { display: flex; flex-direction: column; gap: var(--space-xs); }
+
+.recent-shot {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-sm) 10px;
+    background-color: var(--color-bg-primary);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-md);
+}
+
+.recent-shot.good { border-left: 3px solid var(--color-accent-green); }
+.recent-shot.bad { border-left: 3px solid var(--color-accent-red); }
+.recent-shot.ok { border-left: 3px solid var(--color-accent-yellow); }
+
+.shot-club { color: var(--color-text-primary); }
+.shot-result { color: var(--color-text-muted); }
+.no-shots { color: var(--color-text-dim); font-size: var(--font-size-md); text-align: center; padding: var(--space-xl); }
+
+/* ============================================
+   SHOT SUMMARY (in Golfer Tab)
+   ============================================ */
+.shot-summary-section {
+    background-color: var(--color-bg-dark);
+    border: 1px solid var(--color-accent-green);
+}
+
+.shot-summary-header {
+    color: var(--color-accent-green);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--space-sm);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--color-bg-secondary);
+}
+
+.shot-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xs);
+}
+
+.shot-summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.shot-summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-xs) 0;
+}
+
+.shot-summary-label {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.shot-summary-value {
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.shot-landing-note {
+    margin-top: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-align: center;
+}
+
+.shot-landing-note.spin-back {
+    background-color: rgba(52, 152, 219, 0.2);
+    color: var(--color-accent-blue);
+}
+
+.shot-landing-note.check-up {
+    background-color: rgba(92, 184, 92, 0.2);
+    color: var(--color-accent-green);
+}
+
+.no-shot-data {
+    color: var(--color-text-dim);
+    font-size: var(--font-size-md);
+    text-align: center;
+    padding: var(--space-lg);
+}
+
+/* ============================================
+   CLUBS PAGE - EXPANDABLE LIST
+   ============================================ */
+.clubs-page { padding: var(--space-sm) 0; }
+
+.club-expandable {
+    background-color: var(--color-bg-secondary);
+    border-radius: 0;
+    overflow: hidden;
+}
+
+.club-header {
+    display: flex;
+    align-items: center;
+    padding: var(--space-md) var(--space-base, 14px);
+    cursor: pointer;
+}
+
+.club-header-name { flex: 1; color: var(--color-text-primary); font-size: var(--font-size-lg); font-weight: 500; }
+.club-header-yards { color: var(--color-accent-green); font-size: var(--font-size-lg); font-weight: 500; margin-right: var(--space-md); min-width: 40px; }
+.club-header-stat { color: var(--color-text-muted); font-size: var(--font-size-lg); margin-right: var(--space-sm); min-width: 36px; text-align: right; }
+
+.club-details { display: none; padding: 0 var(--space-base, 14px) var(--space-base, 14px); }
+.club-expandable.expanded .club-details { display: block; }
+.club-expandable.expanded .club-header { border-bottom: 1px solid #333; }
+
+.club-stats-row { display: flex; gap: var(--space-md); }
+
+.club-stat {
+    flex: 1;
+    background-color: var(--color-bg-primary);
+    border-radius: 0;
+    padding: var(--space-sm) var(--space-md);
+    text-align: center;
+}
+
+.club-stat-label { display: block; color: var(--color-text-dim); font-size: var(--font-size-sm); margin-bottom: 2px; }
+.club-stat-value { color: var(--color-text-primary); font-size: var(--font-size-base); font-weight: 500; }
+
+/* ============================================
+   MINI DISPERSION MAP
+   ============================================ */
+.club-dispersion-mini {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    max-height: 180px;
+    background: linear-gradient(to bottom, var(--color-fairway), var(--color-rough));
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.mini-dispersion-target { display: none; }
+
+.mini-dispersion-crosshair-v {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: rgba(255,255,255,0.25);
+    transform: translateX(-50%);
+}
+
+.mini-dispersion-crosshair-h {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: rgba(255,255,255,0.25);
+    transform: translateY(-50%);
+}
+
+.mini-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px dashed rgba(255,255,255,0.3);
+    border-radius: var(--radius-round);
+    aspect-ratio: 1;
+}
+
+.mini-ring::after {
+    content: attr(data-yards);
+    position: absolute;
+    right: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--font-size-sm);
+    color: rgba(255,255,255,0.6);
+}
+
+.mini-label-short,
+.mini-label-long {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: var(--font-size-sm);
+    color: rgba(255,255,255,0.5);
+}
+
+.mini-label-short { bottom: var(--space-xs); }
+.mini-label-long { top: var(--space-xs); }
+
+.mini-dispersion-point {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background-color: rgba(255,255,255,0.75);
+    border-radius: var(--radius-round);
+    transform: translate(-50%, -50%);
+}
+
+.mini-dispersion-point.miss { background-color: var(--color-accent-red); }
+
+.mini-dispersion-point.this-round {
+    background-color: var(--color-accent-orange);
+    box-shadow: 0 0 3px var(--color-accent-orange);
+}
+
+.mini-dispersion-point.this-round.miss {
+    background-color: var(--color-accent-red);
+    box-shadow: 0 0 3px var(--color-accent-red);
+}
+
+.no-shots-mini {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255,255,255,0.4);
+    font-size: var(--font-size-sm);
+}
+
+/* ============================================
+   DISPERSION RINGS (LEGACY SUPPORT)
+   ============================================ */
+.dispersion-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border: 1px dashed rgba(255,255,255,0.25);
+    border-radius: var(--radius-round);
+    transform: translate(-50%, -50%);
+}
+
+.dispersion-ring::after {
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--font-size-xs);
+    color: rgba(255,255,255,0.5);
+}
+
+.dispersion-ring.ring-5 { width: 50px; height: 50px; }
+.dispersion-ring.ring-5::after { content: '5y'; }
+.dispersion-ring.ring-10 { width: 100px; height: 100px; }
+.dispersion-ring.ring-10::after { content: '10y'; }
+.dispersion-ring.ring-15 { width: 150px; height: 150px; }
+.dispersion-ring.ring-15::after { content: '15y'; }
+
+.dispersion-target-pin {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background-color: var(--color-accent-red);
+    border-radius: var(--radius-round);
+    border: 2px solid var(--color-text-primary);
+    z-index: 5;
+}
+
+.dispersion-point {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background-color: rgba(255,255,255,0.7);
+    border-radius: var(--radius-round);
+    transform: translate(-50%, -50%);
+}
+
+.dispersion-point.miss { background-color: var(--color-accent-red); }
+
+
+/* ============================================
+   SHOT DATA DISPLAY (TrackMan Style)
+   ============================================ */
+.shot-data-display {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 30, 0.95);
+    border: 1px solid rgba(92, 184, 92, 0.3);
+    border-radius: 0;
+    padding: var(--space-md) var(--space-lg);
+    z-index: 200;
+    min-width: 280px;
+    max-width: 350px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.shot-data-display.fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+}
+
+.shot-data-header {
+    color: var(--color-accent-green);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--space-sm);
+    text-align: center;
+    border-bottom: 1px solid rgba(92, 184, 92, 0.2);
+    padding-bottom: var(--space-xs);
+}
+
+.shot-data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xs) var(--space-md);
+}
+
+.shot-data-grid .data-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-xs) 0;
+}
+
+.shot-data-grid .data-label {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+}
+
+.shot-data-grid .data-value {
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.landing-note {
+    margin-top: var(--space-sm);
+    text-align: center;
+    padding-top: var(--space-xs);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.landing-note .spin-back {
+    color: var(--color-accent-blue);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.landing-note .check-up {
+    color: var(--color-accent-green);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* ============================================
+   WIND INDICATOR
+   ============================================ */
+.wind-indicator {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    min-width: 70px;
+    z-index: 100;
+}
+
+.wind-arrow {
+    font-size: 24px;
+    color: var(--color-accent-blue);
+    transition: transform 0.3s ease;
+    line-height: 1;
+}
+
+.wind-speed {
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.wind-dir, .wind-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Wind strength color coding */
+.wind-indicator.calm .wind-arrow {
+    color: var(--color-accent-green);
+}
+
+.wind-indicator.moderate .wind-arrow {
+    color: var(--color-accent-yellow);
+}
+
+.wind-indicator.strong .wind-arrow {
+    color: var(--color-accent-orange);
+}
+
+.wind-indicator.extreme .wind-arrow {
+    color: var(--color-accent-red);
+}
+
+
+/* ============================================
+   CONTINUE BUTTON OVERLAY
+   ============================================ */
+.continue-overlay {
+    position: fixed;
+    bottom: 100px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 150;
+    pointer-events: none;
+}
+
+.continue-button {
+    background: var(--color-accent-green);
+    color: var(--color-text-primary);
+    border: none;
+    border-radius: 0;
+    padding: var(--space-lg) var(--space-xl);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: background var(--transition-fast);
+    min-width: 150px;
+}
+
+.continue-button:hover {
+    background: var(--color-accent-green-hover, #4cae4c);
+}
+
+.continue-button:active {
+    background: var(--color-accent-green-active, #449d44);
+}
+
+/* ============================================
+   HOLED CELEBRATION OVERLAY
+   ============================================ */
+.holed-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.5);
+    animation: holed-fade-in 0.3s ease-out;
+}
+
+.holed-overlay.fade-out {
+    animation: holed-fade-out 0.5s ease-out forwards;
+}
+
+.holed-message {
+    text-align: center;
+    animation: holed-bounce 0.5s ease-out;
+}
+
+.holed-text {
+    font-size: 72px;
+    font-weight: 700;
+    color: var(--color-accent-green);
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    letter-spacing: 4px;
+}
+
+.holed-strokes {
+    font-size: 24px;
+    color: var(--color-text-primary);
+    margin-top: var(--space-md);
+}
+
+@keyframes holed-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes holed-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes holed-bounce {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+
+/* ============================================
+   LIE WINDOW - In Left Controls Stack
+   ============================================ */
+.lie-window {
+    background-color: var(--color-bg-secondary);
+    border-radius: 0;
+    padding: var(--space-sm) var(--space-md);
+    min-width: 60px;
+    width: 60px;
+    border: 2px solid var(--color-text-muted);
+    text-align: center;
+}
+
+.lie-window-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lie-name {
+    font-family: var(--font-family);
+    font-size: var(--font-size-lg);
+    font-weight: normal;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+}
+
+
+/* Lie effect note in shot data display */
+.lie-effect-note {
+    margin-top: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    background: rgba(240, 173, 78, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-accent-orange);
+    text-align: center;
+}
+
+
+/* ============================================
+   GREEN PAGE - ELEVATION LEGEND
+   ============================================ */
+.green-elevation-legend {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    z-index: 20;
+}
+
+.legend-gradient {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.legend-bar {
+    width: 60px;
+    height: 8px;
+    border-radius: 2px;
+    background: linear-gradient(to right, 
+        rgb(40, 80, 140),
+        rgb(80, 140, 180),
+        rgb(60, 200, 100),
+        rgb(240, 180, 20),
+        rgb(255, 100, 20)
+    );
+}
+
+.legend-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 8px;
+    color: var(--color-text-dim);
+}
+
+
+/* ============================================
+   NEW UI LAYOUT - GAME CONTROLS
+   Requirements: 10.1, 10.2, 10.3, 10.5
+   ============================================ */
+
+/* Left-side control stack - Club, Power, Shape buttons stacked vertically */
+.left-controls {
+    position: absolute;
+    left: var(--space-md);
+    bottom: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    z-index: 50;
+}
+
+/* Right-side aim button container */
+.right-controls {
+    position: absolute;
+    right: var(--space-md);
+    bottom: 100px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Control button wrapper - provides positioning context for expandable elements */
+.control-btn-wrapper {
+    position: relative;
+}
+
+/* Control button base styles */
+.control-btn {
+    min-width: 60px;
+    width: 60px;
+    height: 48px; /* Fixed height for consistent expandable alignment */
+    padding: var(--space-md) var(--space-sm);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: 2px solid var(--color-text-muted);
+    border-radius: 0;
+    font-family: var(--font-family);
+    font-size: var(--font-size-lg);
+    font-weight: normal;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    /* No shadows, gradients, or backdrop-filter */
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn:hover {
+    background: var(--color-bg-tertiary);
+}
+
+.control-btn:active {
+    background: var(--color-bg-hover);
+}
+
+.control-btn:focus {
+    outline: none;
+    border-color: var(--color-accent-green);
+}
+
+/* Disabled state for control buttons (e.g., shape button when using putter) */
+.control-btn.disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* Aim button - additional styles for right side */
+.aim-btn {
+    min-width: 50px;
+    min-height: 50px;
+    width: 50px;
+    height: 50px;
+    border-radius: 0;
+    font-size: var(--font-size-lg);
+    background: rgba(30, 30, 30, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.aim-btn:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.aim-btn.active {
+    background: var(--color-fairway);
+    border-color: var(--color-accent-green);
+}
+
+/* ============================================
+   YARDAGE INDICATOR STRIP - Bottom swipe-up hint
+   Requirements: 10.5, 11.3, 11.5
+   ============================================ */
+.yardage-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.85);
+    padding: var(--space-xl) var(--space-md) var(--space-lg);
+    min-height: 90px;
+    z-index: 40;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--transition-fast);
+    border-radius: 0;
+}
+
+.yardage-indicator:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.yardage-indicator:active {
+    background: rgba(30, 30, 30, 0.9);
+}
+
+.yardage-indicator-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.yardage-indicator-text {
+    font-family: var(--font-family);
+    font-size: var(--font-size-lg);
+    font-weight: normal;
+    color: var(--color-text-primary);
+}
+
+.yardage-indicator-hint {
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    animation: swipeHintPulse 2s ease-in-out infinite;
+}
+
+@keyframes swipeHintPulse {
+    0%, 100% {
+        opacity: 0.6;
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-3px);
+    }
+}
+
+/* Swipe handle bar visual indicator */
+.yardage-indicator::before {
+    content: '';
+    position: absolute;
+    top: var(--space-sm);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 0;
+}
+
+.yardage-indicator:hover::before {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+
+/* ============================================
+   CLUB SELECTOR - Horizontal Expandable List
+   Requirements: 13.1, 13.2, 13.3, 13.5
+   ============================================ */
+
+/* Club selector container - expands from left, aligned with button */
+.club-selector {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    margin-left: var(--space-sm);
+    overflow: hidden;
+    transition: max-width 0.3s ease, opacity 0.3s ease;
+    z-index: 45;
+}
+
+/* Collapsed state - hidden */
+.club-selector.collapsed {
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Expanded state - visible with horizontal scroll */
+.club-selector.expanded {
+    max-width: 245px; /* Width for ~5 clubs plus padding */
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Horizontal scroll container - matches button height */
+.club-scroll {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-xs);
+    padding: 0 var(--space-sm);
+    height: 48px; /* Match control button height */
+    width: 245px; /* Fixed width for consistency */
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    background: rgba(20, 20, 20, 0.95);
+    border-radius: 0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+/* Hide scrollbar for Chrome/Safari */
+.club-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* Individual club item in selector - sized to fit within scroll container */
+.club-selector-item {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(40, 40, 40, 0.9);
+    border: 2px solid transparent;
+    border-radius: 0;
+    font-family: var(--font-family);
+    font-size: var(--font-size-lg);
+    font-weight: normal;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: background-color var(--transition-fast),
+                border-color var(--transition-fast),
+                transform var(--transition-fast),
+                box-shadow var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Club item hover state */
+.club-selector-item:hover {
+    background: rgba(60, 60, 60, 0.95);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+/* Club item active/pressed state */
+.club-selector-item:active {
+    transform: scale(0.95);
+    background: rgba(70, 70, 70, 0.95);
+}
+
+/* Selected club highlight - Requirements: 13.5 */
+.club-selector-item.selected {
+    background: var(--color-fairway);
+    border-color: var(--color-accent-green);
+    box-shadow: 0 0 10px rgba(92, 184, 92, 0.4);
+    color: var(--color-text-primary);
+}
+
+.club-selector-item.selected:hover {
+    background: #4a8c44;
+    border-color: var(--color-accent-green);
+}
+
+/* Emoji clubs (Driver, Putter) - no longer using emojis */
+.club-selector-item:first-child,
+.club-selector-item:last-child {
+    font-size: var(--font-size-lg);
+}
+
+/* Position handled by .control-btn-wrapper */
+
+
+/* ============================================
+   POWER SLIDER - Horizontal Expandable Slider
+   Requirements: 14.1, 14.2, 14.3
+   ============================================ */
+
+/* Power slider container - expands from left, aligned with button */
+.power-slider-expandable {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    margin-left: var(--space-sm);
+    overflow: hidden;
+    transition: max-width 0.3s ease, opacity 0.3s ease;
+    z-index: 45;
+    border-radius: 0;
+}
+
+/* Collapsed state - hidden */
+.power-slider-expandable.collapsed {
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Expanded state - visible */
+.power-slider-expandable.expanded {
+    max-width: 245px; /* Match club selector width */
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Slider track container - matches button height */
+.power-slider-track {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: 0 var(--space-md);
+    height: 48px; /* Match control button height */
+    width: 245px; /* Match club selector width */
+    background: rgba(20, 20, 20, 0.95);
+    border-radius: 0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+/* The range input slider with color gradient */
+.power-range-expandable {
+    flex: 1;
+    height: 32px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    --power-color: hsl(240, 80%, 50%); /* Default blue */
+}
+
+/* Slider track - WebKit (Chrome, Safari) */
+.power-range-expandable::-webkit-slider-runnable-track {
+    height: 8px;
+    background: linear-gradient(to right, 
+        hsl(240, 80%, 50%) 0%,    /* Blue at 0% */
+        hsl(180, 80%, 50%) 25%,   /* Cyan at 25% */
+        hsl(120, 80%, 50%) 50%,   /* Green at 50% */
+        hsl(60, 80%, 50%) 75%,    /* Yellow at 75% */
+        hsl(0, 80%, 50%) 100%     /* Red at 100% */
+    );
+    border-radius: 0;
+}
+
+/* Slider thumb - WebKit */
+.power-range-expandable::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 24px;
+    background: var(--power-color);
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    margin-top: -8px;
+    transition: transform var(--transition-fast);
+}
+
+.power-range-expandable::-webkit-slider-thumb:hover {
+    transform: scaleX(1.2);
+}
+
+.power-range-expandable::-webkit-slider-thumb:active {
+    transform: scaleX(0.9);
+}
+
+/* Slider track - Firefox */
+.power-range-expandable::-moz-range-track {
+    height: 8px;
+    background: linear-gradient(to right, 
+        hsl(240, 80%, 50%) 0%,    /* Blue at 0% */
+        hsl(180, 80%, 50%) 25%,   /* Cyan at 25% */
+        hsl(120, 80%, 50%) 50%,   /* Green at 50% */
+        hsl(60, 80%, 50%) 75%,    /* Yellow at 75% */
+        hsl(0, 80%, 50%) 100%     /* Red at 100% */
+    );
+    border-radius: 0;
+}
+
+/* Slider thumb - Firefox */
+.power-range-expandable::-moz-range-thumb {
+    width: 12px;
+    height: 24px;
+    background: var(--power-color);
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+.power-range-expandable::-moz-range-thumb:hover {
+    transform: scaleX(1.2);
+}
+
+/* Percentage display */
+.power-percent-display {
+    min-width: 48px;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: hsl(240, 80%, 60%); /* Default blue, updated by JS */
+    text-align: center;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Position handled by .control-btn-wrapper */
+
+
+/* ============================================
+   SHAPE SLIDER - Horizontal Expandable Slider with Curve Symbols
+   Requirements: 15.1, 15.2, 15.3, 15.4
+   ============================================ */
+
+/* Shape slider container - expands from left, aligned with button */
+.shape-slider-expandable {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    margin-left: var(--space-sm);
+    overflow: hidden;
+    transition: max-width 0.3s ease, opacity 0.3s ease;
+    z-index: 45;
+    border-radius: 0;
+}
+
+/* Collapsed state - hidden */
+.shape-slider-expandable.collapsed {
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Expanded state - visible */
+.shape-slider-expandable.expanded {
+    max-width: 245px; /* Match club selector width */
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Slider track container - matches button height, horizontal layout */
+.shape-slider-track {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    padding: 0 var(--space-sm);
+    height: 48px; /* Match control button height */
+    width: 245px; /* Match club selector width */
+    background: rgba(20, 20, 20, 0.95);
+    border-radius: 0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+/* Curve display - visual indicators showing expected ball flight path */
+/* Requirements: 15.2, 15.4 */
+.curve-display {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    padding: 0;
+}
+
+/* Individual curve indicator - compact for horizontal layout */
+.curve-indicator {
+    font-size: 16px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast), 
+                background-color var(--transition-fast),
+                transform var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.curve-indicator:hover {
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+/* Active/selected curve indicator */
+.curve-indicator.active {
+    color: var(--color-accent-green);
+    background: rgba(92, 184, 92, 0.2);
+    text-shadow: 0 0 8px rgba(92, 184, 92, 0.6);
+}
+
+/* Hook indicator - curves left */
+.curve-hook {
+    color: var(--color-accent-orange);
+}
+
+.curve-hook.active {
+    color: var(--color-accent-orange);
+    background: rgba(243, 156, 18, 0.2);
+    text-shadow: 0 0 8px rgba(243, 156, 18, 0.6);
+}
+
+/* Draw indicator - slight left curve */
+.curve-draw {
+    color: var(--color-accent-yellow);
+}
+
+.curve-draw.active {
+    color: var(--color-accent-yellow);
+    background: rgba(240, 173, 78, 0.2);
+    text-shadow: 0 0 8px rgba(240, 173, 78, 0.6);
+}
+
+/* Straight indicator - no curve */
+.curve-straight.active {
+    color: var(--color-accent-green);
+    background: rgba(92, 184, 92, 0.2);
+    text-shadow: 0 0 8px rgba(92, 184, 92, 0.6);
+}
+
+/* Fade indicator - slight right curve */
+.curve-fade {
+    color: var(--color-accent-yellow);
+}
+
+.curve-fade.active {
+    color: var(--color-accent-yellow);
+    background: rgba(240, 173, 78, 0.2);
+    text-shadow: 0 0 8px rgba(240, 173, 78, 0.6);
+}
+
+/* Slice indicator - curves right */
+.curve-slice {
+    color: var(--color-accent-orange);
+}
+
+.curve-slice.active {
+    color: var(--color-accent-orange);
+    background: rgba(243, 156, 18, 0.2);
+    text-shadow: 0 0 8px rgba(243, 156, 18, 0.6);
+}
+
+/* The range input slider - hidden, using curve indicators instead */
+/* Requirements: 15.3 - Range from hard hook (-2) to hard slice (2) with straight (0) in center */
+.shape-range-expandable {
+    display: none;
+}
+
+/* Slider track - WebKit (Chrome, Safari) */
+.shape-range-expandable::-webkit-slider-runnable-track {
+    height: 8px;
+    background: linear-gradient(to right, 
+        var(--color-accent-orange) 0%,      /* Hook */
+        var(--color-accent-yellow) 25%,     /* Draw */
+        var(--color-accent-green) 50%,      /* Straight */
+        var(--color-accent-yellow) 75%,     /* Fade */
+        var(--color-accent-orange) 100%     /* Slice */
+    );
+    border-radius: 0;
+}
+
+/* Slider thumb - WebKit */
+.shape-range-expandable::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    background: var(--color-text-primary);
+    border: 3px solid var(--color-accent-green);
+    border-radius: 0;
+    cursor: pointer;
+    margin-top: -8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    transition: transform var(--transition-fast), 
+                box-shadow var(--transition-fast),
+                border-color var(--transition-fast);
+}
+
+.shape-range-expandable::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+}
+
+.shape-range-expandable::-webkit-slider-thumb:active {
+    transform: scale(0.95);
+}
+
+/* Slider track - Firefox */
+.shape-range-expandable::-moz-range-track {
+    height: 8px;
+    background: linear-gradient(to right, 
+        var(--color-accent-orange) 0%,      /* Hook */
+        var(--color-accent-yellow) 25%,     /* Draw */
+        var(--color-accent-green) 50%,      /* Straight */
+        var(--color-accent-yellow) 75%,     /* Fade */
+        var(--color-accent-orange) 100%     /* Slice */
+    );
+    border-radius: 0;
+}
+
+/* Slider thumb - Firefox */
+.shape-range-expandable::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: var(--color-text-primary);
+    border: 3px solid var(--color-accent-green);
+    border-radius: 0;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.shape-range-expandable::-moz-range-thumb:hover {
+    transform: scale(1.1);
+}
+
+/* Position handled by .control-btn-wrapper */
+
+
+/* ============================================
+   YARDAGE BOOK TAB TRANSITIONS
+   Requirements: 5.5 - Swipeable tabs with smooth transitions
+   ============================================ */
+
+/* Tab content transition container */
+.yardage-content {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Tab content transition states */
+.yardage-content.transitioning {
+    pointer-events: none;
+}
+
+/* Smooth slide animation for tab transitions */
+.yardage-content.slide-out-left {
+    animation: slideOutLeft 0.25s ease-in forwards;
+}
+
+.yardage-content.slide-out-right {
+    animation: slideOutRight 0.25s ease-in forwards;
+}
+
+.yardage-content.slide-in-left {
+    animation: slideInLeft 0.25s ease-out forwards;
+}
+
+.yardage-content.slide-in-right {
+    animation: slideInRight 0.25s ease-out forwards;
+}
+
+@keyframes slideOutLeft {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Tab button active indicator animation */
+.tab-btn {
+    position: relative;
+    transition: color var(--transition-fast), 
+                background-color var(--transition-fast);
+}
+
+.tab-btn::after {
+    transition: transform 0.2s ease-out, 
+                opacity 0.2s ease-out;
+}
+
+/* Swipe feedback visual indicator */
+.yardage-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50px;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 100;
+    transition: opacity 0.15s ease;
+}
+
+/* Left edge swipe indicator */
+.yardage-content.swiping-right::before {
+    left: 0;
+    background: linear-gradient(to right, 
+        rgba(92, 184, 92, 0.3) 0%, 
+        transparent 100%
+    );
+    opacity: 1;
+}
+
+/* Right edge swipe indicator */
+.yardage-content.swiping-left::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 50px;
+    background: linear-gradient(to left, 
+        rgba(92, 184, 92, 0.3) 0%, 
+        transparent 100%
+    );
+    pointer-events: none;
+    opacity: 1;
+    z-index: 100;
+}
+
+
+/* ============================================
+   PUTTER STATS IN CLUBS TAB
+   ============================================ */
+.putter-section {
+    border-top: 1px solid var(--color-bg-tertiary);
+    margin-top: var(--space-sm);
+}
+
+.putter-stats-display {
+    padding: var(--space-md) 0;
+}
+
+.putter-bias-visual {
+    padding: var(--space-sm) var(--space-md);
+}
+
+.bias-track {
+    position: relative;
+    height: 8px;
+    background-color: var(--color-bg-dark);
+    border-radius: 0;
+    margin-bottom: var(--space-xs);
+}
+
+.bias-center-mark {
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background-color: var(--color-text-dim);
+    transform: translateX(-50%);
+}
+
+.bias-indicator {
+    position: absolute;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    background-color: var(--color-accent-orange);
+    border-radius: 0;
+    transform: translate(-50%, -50%);
+    transition: left var(--transition-normal);
+}
+
+.bias-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-dim);
+}
+
+/* ============================================
+   PUTT SIMULATION BUTTON (Read button)
+   ============================================ */
+.simulate-putt-btn {
+    /* Inherits from .control-btn, just needs overrides */
+}
+
+.simulate-putt-btn.disabled {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+}
+
+.simulate-putt-btn.hidden {
+    display: none;
+}
+
+/* Simulating state */
+.simulate-putt-btn.simulating {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* ============================================
+   CADDY SYSTEM UI COMPONENTS
+   Requirements: 3.2, 4.2, 4.4
+   ============================================ */
+
+/* Stats HUD - Top-left corner display
+   Requirement 4.4: Small golfer portrait and 4 slim bars */
+.stats-hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 0;
+    z-index: 100;
+}
+
+.stats-hud-portrait {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    border-radius: 0;
+    border: 2px solid var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+.stats-hud-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.stats-hud-bar-wrapper {
+    width: 60px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+    overflow: hidden;
+}
+
+.stats-hud-bar-fill {
+    height: 100%;
+    border-radius: 0;
+    transition: width 300ms ease-out;
+}
+
+/* Stat bar colors - just colors, no text per requirement 4.4 */
+.stats-hud-bar-fill-confidence {
+    background-color: var(--color-accent-green);
+}
+
+.stats-hud-bar-fill-pressure {
+    background-color: var(--color-accent-red);
+}
+
+.stats-hud-bar-fill-focus {
+    background-color: var(--color-accent-blue);
+}
+
+.stats-hud-bar-fill-trust {
+    background-color: var(--color-accent-yellow);
+}
+
+/* ============================================
+   SPEAK BUTTON WRAPPER - Positioning context for dialogue panel
+   ============================================ */
+.speak-btn-wrapper {
+    position: relative;
+}
+
+/* ============================================
+   DIALOGUE PANEL - Slide-out from right
+   Requirement 3.2: Same square-themed button style as existing UI
+   ============================================ */
+
+/* Dialogue panel container - slides from right of speak button */
+.dialogue-panel-slideout {
+    position: absolute;
+    right: 100%;
+    bottom: 0;
+    margin-right: var(--space-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    overflow: hidden;
+    transition: max-width 0.3s ease, opacity 0.3s ease;
+    z-index: 145;
+}
+
+/* Collapsed state - hidden */
+.dialogue-panel-slideout.collapsed {
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Expanded state - visible */
+.dialogue-panel-slideout.expanded {
+    max-width: 245px; /* Match club selector width */
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.dialogue-mood-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    font-size: var(--font-size-lg);
+    white-space: nowrap;
+}
+
+.dialogue-mood-indicator .mood-label {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+}
+
+.dialogue-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+    width: 245px; /* Match club selector width */
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Dialogue option buttons - square-themed matching existing UI
+   Requirement 3.2: Same square-themed button style */
+.dialogue-option-btn {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: none;
+    border-radius: 0;
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), opacity var(--transition-fast);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+}
+
+.dialogue-option-btn:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+.dialogue-option-btn:active {
+    background-color: var(--color-bg-hover);
+}
+
+.dialogue-option-btn.disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.dialogue-option-btn .option-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dialogue-option-btn .stat-indicators {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: var(--space-sm);
+}
+
+.dialogue-option-btn .stat-indicator {
+    font-size: var(--font-size-xs);
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Stay Silent button - muted style */
+.dialogue-silent-btn {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    margin-top: var(--space-xs);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+    border: none;
+    border-radius: 0;
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), opacity var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dialogue-silent-btn:hover {
+    background-color: var(--color-bg-hover);
+}
+
+.dialogue-silent-btn:active {
+    background-color: var(--color-bg-secondary);
+}
+
+.dialogue-silent-btn.disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* Legacy overlay styles - kept for backwards compatibility */
+.dialogue-panel-overlay {
+    display: none;
+}
+
+.dialogue-panel {
+    display: none;
+}
+
+/* Golfer Bubble - Speech bubble appearance
+   Requirement 10.2: Middle-top screen position */
+.golfer-bubble {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    z-index: 140;
+    opacity: 0;
+    transition: opacity 200ms ease, transform 200ms ease;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.golfer-bubble-content {
+    background-color: var(--color-bg-primary);
+    border: 2px solid var(--color-accent-green);
+    border-radius: 0;
+    padding: var(--space-md) var(--space-lg);
+    max-width: 280px;
+    min-width: 120px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.golfer-bubble:hover .golfer-bubble-content {
+    border-color: var(--color-accent-yellow);
+}
+
+.golfer-bubble-text {
+    color: var(--color-text-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+    text-align: center;
+}
+
+.golfer-bubble-hint {
+    color: var(--color-text-muted);
+    font-family: var(--font-family);
+    font-size: var(--font-size-xs);
+    text-align: center;
+    margin-top: 6px;
+    opacity: 0.8;
+}
+
+/* Speech bubble tail - pointing down */
+.golfer-bubble-tail {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid var(--color-accent-green);
+}
+
+.golfer-bubble:hover .golfer-bubble-tail {
+    border-top-color: var(--color-accent-yellow);
+}
+
+.golfer-bubble-tail-inner {
+    position: absolute;
+    bottom: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid var(--color-bg-primary);
+}
+
+/* Speak Button - Square button matching existing UI
+   Requirement 4.2: Speech bubble icon consistent with game's square button style */
+.speak-btn {
+    min-width: 50px;
+    min-height: 50px;
+    width: 50px;
+    height: 50px;
+    border-radius: 0;
+    font-size: var(--font-size-lg);
+    background: rgba(30, 30, 30, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    margin-bottom: var(--space-sm);
+    color: var(--color-text-primary);
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.speak-btn:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.speak-btn:active {
+    background: var(--color-bg-hover);
+}
+
+.speak-btn:focus {
+    outline: none;
+    border-color: var(--color-accent-green);
+}
+
+.speak-btn.hidden {
+    display: none;
+}
+
+/* Speak button active state when dialogue is open */
+.speak-btn.active {
+    background: var(--color-fairway);
+    border-color: var(--color-accent-green);
+}

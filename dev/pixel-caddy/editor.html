@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Course Editor</title>
+    <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+    <div class="editor-container">
+        <!-- Top toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <label>Course:</label>
+                <button id="btn-new">New</button>
+                <input type="text" id="course-name" placeholder="Course Name" value="New Course">
+                <button id="btn-save">Save</button>
+                <button id="btn-load">Load</button>
+                <select id="course-file-select">
+                    <option value="">-- Load Course File --</option>
+                    <option value="courses/test_course.js">test_course.js</option>
+                    <option value="courses/course1/hole1.js">course1/hole1.js</option>
+                </select>
+                <button id="btn-import">Import JS</button>
+                <input type="file" id="file-import" accept=".js" style="display:none">
+            </div>
+            <div class="toolbar-section">
+                <label>Hole:</label>
+                <select id="hole-select">
+                    <option value="0">Hole 1</option>
+                </select>
+                <button id="btn-add-hole">+ Add Hole</button>
+            </div>
+            <div class="toolbar-section">
+                <label>Zoom:</label>
+                <input type="range" id="zoom-slider" min="0.25" max="4" step="0.25" value="1">
+                <span id="zoom-display">100%</span>
+            </div>
+        </div>
+
+        <!-- Main editor area -->
+        <div class="editor-main">
+            <!-- Left panel - tools -->
+            <div class="tool-panel">
+                <h3>Tools</h3>
+                <div class="tool-group">
+                    <button class="tool-btn active" data-tool="select" title="Select/Move">
+                        <span>↖</span> Select
+                    </button>
+                    <button class="tool-btn" data-tool="pan" title="Pan View">
+                        <span>✋</span> Pan
+                    </button>
+                </div>
+
+                <h4>Terrain</h4>
+                <div class="tool-group terrain-tools">
+                    <button class="tool-btn" data-tool="teeBox" data-terrain="teeBox">
+                        <span class="color-swatch" style="background:#4a7c43"></span> Tee Box
+                    </button>
+                    <button class="tool-btn" data-tool="fairway" data-terrain="fairway">
+                        <span class="color-swatch" style="background:#3d6b35"></span> Fairway
+                    </button>
+                    <button class="tool-btn" data-tool="rough" data-terrain="rough">
+                        <span class="color-swatch" style="background:#2d5a27"></span> Rough
+                    </button>
+                    <button class="tool-btn" data-tool="green" data-terrain="green">
+                        <span class="color-swatch" style="background:#5cb85c"></span> Green
+                    </button>
+                    <button class="tool-btn" data-tool="bunker" data-terrain="bunker">
+                        <span class="color-swatch" style="background:#e8d4a8"></span> Bunker
+                    </button>
+                    <button class="tool-btn" data-tool="water" data-terrain="water">
+                        <span class="color-swatch" style="background:#3498db"></span> Water
+                    </button>
+                    <button class="tool-btn" data-tool="outOfBounds" data-terrain="outOfBounds">
+                        <span class="color-swatch" style="background:#1a1a1a"></span> Out of Bounds
+                    </button>
+                    <button class="tool-btn" data-tool="path" data-terrain="path">
+                        <span class="color-swatch" style="background:#8b7355"></span> Path
+                    </button>
+                </div>
+
+                <h4>Markers</h4>
+                <div class="tool-group">
+                    <button class="tool-btn" data-tool="place-tee">
+                        <span>⛳</span> Place Tee
+                    </button>
+                    <button class="tool-btn" data-tool="place-hole">
+                        <span>🚩</span> Place Hole
+                    </button>
+                    <button class="tool-btn" data-tool="centreline">
+                        <span>📍</span> Centreline
+                    </button>
+                    <button class="tool-btn" data-tool="sprinkler">
+                        <span>💧</span> Sprinkler Head
+                    </button>
+                    <button class="tool-btn" data-tool="measure">
+                        <span>📐</span> Measure Point
+                    </button>
+                </div>
+                <div class="centreline-options" id="centreline-panel" style="display:none;">
+                    <button id="btn-clear-centreline" class="small-btn">Clear Centreline</button>
+                    <p class="tool-hint">Click to add points. Drag to move. Delete key removes selected point.</p>
+                </div>
+
+                <h4>Trees</h4>
+                <div class="tool-group">
+                    <button class="tool-btn" data-tool="tree">
+                        <span>🌲</span> Place Tree
+                    </button>
+                </div>
+                <div class="tree-type-select" id="tree-type-panel" style="display:none;">
+                    <select id="tree-type">
+                        <option value="TALL_PINE_1">Tall Pine 1</option>
+                        <option value="TALL_PINE_2">Tall Pine 2</option>
+                        <option value="TALL_PINE_3">Tall Pine 3</option>
+                        <option value="BUSHY_PINE_1">Bushy Pine 1</option>
+                        <option value="BUSHY_PINE_2">Bushy Pine 2</option>
+                        <option value="BUSHY_PINE_3">Bushy Pine 3</option>
+                        <option value="DECIDUOUS_1">Deciduous 1</option>
+                        <option value="DECIDUOUS_2">Deciduous 2</option>
+                        <option value="DECIDUOUS_3">Deciduous 3</option>
+                    </select>
+                </div>
+
+                <h4>Elevation</h4>
+                <div class="tool-group">
+                    <button class="tool-btn" data-tool="elevation-up">
+                        <span>⬆</span> Raise
+                    </button>
+                    <button class="tool-btn" data-tool="elevation-down">
+                        <span>⬇</span> Lower
+                    </button>
+                    <button class="tool-btn" data-tool="elevation-smooth">
+                        <span>〰</span> Smooth
+                    </button>
+                </div>
+                <div class="elevation-options" id="elevation-panel">
+                    <label>
+                        Brush size: <input type="range" id="elev-brush-size" min="5" max="50" value="15">
+                        <span id="elev-brush-display">15</span>
+                    </label>
+                    <label>
+                        Strength: <input type="range" id="elev-strength" min="1" max="10" value="3">
+                        <span id="elev-strength-display">3</span>
+                    </label>
+                </div>
+
+                <h4>Options</h4>
+                <div class="tool-options">
+                    <label>
+                        <input type="checkbox" id="opt-smooth" checked>
+                        Smooth curves
+                    </label>
+                    <label>
+                        Smoothing: <input type="number" id="smooth-amount" value="3" min="1" max="10" style="width:50px">
+                    </label>
+                    <label>
+                        <input type="checkbox" id="opt-snap">
+                        Snap to grid
+                    </label>
+                    <label>
+                        Grid size: <input type="number" id="grid-size" value="5" min="1" max="20" style="width:50px">
+                    </label>
+                </div>
+
+                <h4>Actions</h4>
+                <div class="tool-group">
+                    <button id="btn-delete">Delete Selected</button>
+                </div>
+            </div>
+
+            <!-- Canvas area -->
+            <div class="canvas-container" id="canvas-container">
+                <canvas id="editor-canvas"></canvas>
+                <div class="cursor-info" id="cursor-info">
+                    <span id="cursor-world">X: 0, Y: 0</span>
+                    <span id="cursor-yards">0y × 0y</span>
+                </div>
+            </div>
+
+            <!-- Right panel - properties -->
+            <div class="properties-panel">
+                <h3>Properties</h3>
+                <div id="selection-props">
+                    <p class="no-selection">No selection</p>
+                </div>
+
+                <h3>Hole Info</h3>
+                <div class="hole-props">
+                    <label>Par: <input type="number" id="hole-par" value="4" min="3" max="5"></label>
+                    <label>Name: <input type="text" id="hole-name" value="Hole 1"></label>
+                    <div class="hole-length">
+                        <span class="prop-label">Length:</span>
+                        <span id="hole-yards-display">0 yards</span>
+                    </div>
+                </div>
+
+                <h3>Layers</h3>
+                <div class="layer-toggles">
+                    <label><input type="checkbox" id="layer-grid" checked> Grid</label>
+                    <label><input type="checkbox" id="layer-elevation" checked> Elevation</label>
+                    <label><input type="checkbox" id="layer-terrain" checked> Terrain</label>
+                    <label><input type="checkbox" id="layer-trees" checked> Trees</label>
+                    <label><input type="checkbox" id="layer-markers" checked> Markers</label>
+                    <label><input type="checkbox" id="layer-sprinklers" checked> Sprinklers</label>
+                    <label><input type="checkbox" id="layer-measurePoints" checked> Measure Points</label>
+                    <label><input type="checkbox" id="layer-centreline" checked> Centreline</label>
+                    <label><input type="checkbox" id="layer-nodes" checked> Nodes</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom panel - code output -->
+        <div class="output-panel" id="output-panel">
+            <div class="output-header">
+                <h3>Generated Code:</h3>
+                <button id="btn-generate">Generate</button>
+                <button id="btn-copy">Copy to Clipboard</button>
+                <button id="btn-toggle-output">Expand ▲</button>
+            </div>
+            <textarea id="code-output" readonly placeholder="Click 'Generate' to create course code..."></textarea>
+        </div>
+    </div>
+
+    <script type="module" src="js/editor/editor.js"></script>
+</body>
+</html>

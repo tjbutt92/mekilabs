@@ -44,7 +44,7 @@
     "description": "Waves of blocky undead are coming. Build defenses, grab weapons, and survive as long as you can.",
     "tags": ["Zombie", "Survival", "Shooter", "Waves"],
     "platforms": ["web"],
-    "banner": "icons/zomblock-banner.jpg",
+    "banner": "icons/zomblock-banner.png",
     "icon": "icons/zomblock-icon.png",
     "webUrl": "https://zomblock.com",
     "webStatus": "Released",
@@ -59,7 +59,7 @@
     "platforms": ["web"],
     "banner": "icons/pixel-caddy-banner.jpg",
     "icon": "icons/pixel-caddy-icon.png",
-    "webUrl": "",
+    "webUrl": "/dev/pixel-caddy/",
     "webStatus": "In Development",
     "androidUrl": "",
     "androidStatus": ""

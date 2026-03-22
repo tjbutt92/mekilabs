@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Caddy Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div class="game-container">
+        <div class="golf-hole">
+            <!-- Left-side control stack -->
+            <div class="left-controls">
+                <div class="lie-window" id="lie-window">
+                    <!-- Lie window placeholder - populated by JS -->
+                </div>
+                <div class="control-btn-wrapper">
+                    <button class="control-btn" id="btn-club">Club</button>
+                </div>
+                <div class="control-btn-wrapper">
+                    <button class="control-btn" id="btn-power">Power</button>
+                </div>
+                <div class="control-btn-wrapper">
+                    <button class="control-btn" id="btn-shape">Shape</button>
+                </div>
+            </div>
+            
+            <!-- Right-side aim button -->
+            <div class="right-controls">
+                <button class="control-btn aim-btn" id="btn-aim">⊕</button>
+            </div>
+        </div>
+        
+        <!-- Bottom yardage indicator strip -->
+        <div class="yardage-indicator" id="yardage-indicator">
+            <div class="yardage-indicator-content">
+                <span class="yardage-indicator-text">Yardage Book</span>
+                <span class="yardage-indicator-hint">↑ Swipe up</span>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="js/game.js"></script>
+</body>
+</html>
