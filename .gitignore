@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Local dev
+.wrangler/
+node_modules/
+
+.vscode
