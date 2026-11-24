@@ -94,6 +94,14 @@
     .menu-section { display: flex; flex-direction: column; gap: 6px; }
     .menu-label { font-size: 18px; font-weight: bold; border-bottom: 2px dashed #ccc; padding-bottom: 2px; text-align: center; }
     
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .toggle-label { font-size: 18px; font-weight: bold; }
+    .toggle-switch { position: relative; flex-shrink: 0; width: 54px; height: 30px; padding: 0; border: 2px solid var(--ink); border-radius: 15px; background: #d9d2c0; cursor: pointer; transition: background 0.2s; box-shadow: 2px 2px 0px rgba(62, 58, 53, 0.15); }
+    .toggle-switch.is-on { background: #2e7d32; }
+    .toggle-knob { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fdfbf7; border: 2px solid var(--ink); box-sizing: border-box; transition: transform 0.2s; }
+    .toggle-switch.is-on .toggle-knob { transform: translateX(24px); }
+    .toggle-switch:focus-visible { outline: 3px solid #0288d1; outline-offset: 2px; }
+
     .stepper-group { display: flex; justify-content: space-between; align-items: center; font-size: 22px; font-weight: bold; padding: 0; }
     .stepper-btn { width: 36px; height: 36px; font-size: 22px; border-radius: 4px 8px 3px 6px; line-height: 1; padding: 0; }
 
@@ -137,11 +145,12 @@
       transition: background-color 0.3s, color 0.3s;
     }
 
-    #btn-scorecard, #btn-tutorial {
+    #btn-scorecard, #btn-tutorial, #btn-landing-map-hud {
       background: transparent; color: var(--ink); border: 2px solid var(--ink);
       border-radius: 2px 6px 3px 5px / 5px 3px 6px 2px; padding: 2px 8px; font-size: 18px; font-family: inherit; cursor: pointer;
     }
-    #btn-scorecard:hover, #btn-tutorial:hover { background: #e4dac1; }
+    #btn-scorecard:hover, #btn-tutorial:hover, #btn-landing-map-hud:hover { background: #e4dac1; }
+    #btn-landing-map-hud.active { background: #2e7d32; color: #fff; }
 
     #scorecard-modal, #tutorial-modal {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -210,6 +219,9 @@
     .shot-ranges { display: flex; gap: 12px; font-size: 14px; font-weight: bold; margin-top: 0; border: 2px dashed var(--ink); padding: 2px 10px; transform: rotate(1deg); background: #fdfbf7; box-shadow: 2px 2px 0px rgba(62, 58, 53, 0.15); }
     .text-bounce { color: #d84315; }
     .text-roll { color: #1b5e20; }
+    .text-wind { display: none; color: var(--ink); }
+    .text-wind.is-on { display: block; }
+    #game-footer.shot-locked .control-panel, #game-footer.shot-locked .shot-ranges { display: none; }
 
     .row { display: flex; justify-content: space-between; gap: 10px; }
     .btn-action { width: 100%; background: var(--btn-color, var(--ink)); color: #fdfbf7; padding: 10px; font-size: 18px; font-family: inherit; border: none; font-weight: bold; cursor: pointer; border-radius: 4px 8px 3px 6px; box-shadow: 4px 4px 0px rgba(0,0,0,0.2); transition: background 0.2s;}
@@ -225,13 +237,25 @@
     #editor-toolbar {
       position: absolute; top: 0; left: 0; width: 100%; padding: 10px 15px; z-index: 20; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; background: rgba(244, 237, 216, 0.95); border-bottom: 2px dashed var(--ink); box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
+
+    /* --- Narrow screens --- */
+    @media (max-width: 560px) {
+      .hud { padding: 10px 10px 0 10px; gap: 6px; }
+      .hud-left { flex-shrink: 0; }
+      #wind-display { padding: 4px 8px; font-size: clamp(12px, 3.4vw, 15px); }
+      #turn-banner { padding: 4px 8px; font-size: clamp(14px, 4vw, 18px); }
+      #score-display { min-width: 0; padding: 4px clamp(6px, 2vw, 12px); gap: clamp(4px, 1.4vw, 12px); font-size: clamp(13px, 3.8vw, 18px); }
+      #btn-scorecard, #btn-tutorial, #btn-landing-map-hud { padding: 1px clamp(4px, 1.4vw, 8px); font-size: clamp(13px, 3.8vw, 18px); }
+      .footer-top { align-items: flex-end; }
+      .shot-ranges { flex-direction: column; gap: 0; align-items: flex-start; line-height: 1.25; padding: 3px 10px; }
+    }
   </style>
 </head>
 <body>
 
   <!-- Landing Screen -->
   <div id="landing-screen">
-    <h1 class="landing-title">Hex Links</h1>
+    <h1 class="landing-title" id="landing-title">Hex Links</h1>
     <h2 style="margin-top: 0px; margin-bottom: 10px; color: #555; text-align: center; font-size: 16px; transform: rotate(1deg);">One Shot. Closest to the Pin Wins.</h2>
 
     <div class="menu-box sketch-box">
@@ -242,6 +266,7 @@
           <select id="lobby-map-select" class="slot-input" style="font-size: 15px; padding: 6px;">
             <!-- Rendered by JS -->
           </select>
+          <button id="btn-delete-saved-map" type="button" class="btn-action" data-action="deleteSavedMap" style="display: none; margin-top: 6px; font-size: 13px; padding: 6px; background: #d32f2f;">Remove from this browser</button>
         </div>
         <div class="menu-section" style="flex: 1;">
           <div class="menu-label">Holes</div>
@@ -250,6 +275,13 @@
             <span id="lobby-holes">3</span>
             <button class="icon-btn sketch-box stepper-btn" data-action="updateLobbyHoles" data-val="1">+</button>
           </div>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="toggle-row">
+          <span id="lbl-landing-map" class="toggle-label">Landing Hint</span>
+          <button id="btn-landing-map" type="button" class="toggle-switch" role="switch" aria-checked="false" aria-labelledby="lbl-landing-map" data-action="toggleLandingMap"><span class="toggle-knob"></span></button>
         </div>
       </div>
 
@@ -264,7 +296,7 @@
     
     <div style="display: flex; gap: 10px; width: 100%; max-width: 380px;">
         <button class="btn-action" style="flex: 2; font-size: 22px; padding: 12px; background: #2e7d32;" data-action="startRound">Tee Off</button>
-        <button class="btn-action" style="flex: 1; font-size: 16px; padding: 12px; background: #5d4037;" data-action="startEditor">Map Editor</button>
+        <button id="btn-open-editor" class="btn-action" style="display: none; flex: 1; font-size: 16px; padding: 12px; background: #5d4037;" data-action="startEditor">Map Editor</button>
         <button class="btn-action" style="flex: 0.5; font-size: 18px; padding: 12px; background: #0288d1;" data-action="showTutorial">?</button>
     </div>
   </div>
@@ -280,6 +312,7 @@
       <div id="score-display" class="sketch-box">
         <span style="color: #d32f2f;">⚑</span><span id="ui-hole">1</span>
         <span style="color: #999; font-weight: normal;">|</span><span id="ui-yds">0</span>y
+        <button id="btn-landing-map-hud" type="button" data-action="toggleLandingMap" title="Landing Hint: show the landing hex before wind, bounce, and roll" aria-pressed="false">◎</button>
         <button id="btn-tutorial" data-action="showTutorial" title="How to Play">❓</button>
         <button id="btn-scorecard" data-action="toggleScorecard" title="View Scorecard">🗒️</button>
       </div>
@@ -292,7 +325,8 @@
         <button id="btn-edit-arrow" class="icon-btn sketch-box" data-action="editorSetMode" data-val="arrow" style="width:auto; padding: 0 10px;">Arrows</button>
       </div>
       <div class="btn-group">
-        <button class="icon-btn sketch-box" data-action="editorExport" style="width:auto; padding: 0 10px;">Export</button>
+        <button class="icon-btn sketch-box" data-action="editorNew" style="width:auto; padding: 0 10px;">New</button>
+        <button class="icon-btn sketch-box" data-action="editorExport" style="width:auto; padding: 0 10px;">Save</button>
         <button class="icon-btn sketch-box" data-action="editorExit" style="width:auto; padding: 0 10px; background: #d32f2f; color: white;">Exit</button>
       </div>
     </div>
@@ -314,6 +348,7 @@
         </defs>
         
         <g id="grid-layer"></g>
+        <g id="landing-layer" style="pointer-events: none;"></g>
         <g id="highlight-layer" style="pointer-events: none;"></g>
         <g id="icon-layer" style="pointer-events: none;"></g>
         <g id="path-layer" style="pointer-events: none;"></g>
@@ -326,6 +361,7 @@
         <div class="shot-ranges">
           <div class="text-bounce">Bnc: <span id="ui-bounce">0-1</span></div>
           <div class="text-roll">Roll: <span id="ui-roll">1-2</span></div>
+          <div id="ui-wind-low" class="text-wind" title="Low shot: the wind pushes 2 hexes less, never below 0">Wind: <span>-2</span></div>
         </div>
       </div>
       <div class="control-panel">
@@ -377,8 +413,8 @@
         <div style="margin-bottom: 15px;">
           <h3 style="margin: 0 0 5px 0;">💨 Trajectory</h3>
           <p style="margin: 0; font-size: 15px; line-height: 1.4;">
-            <strong>Low (Line Drive):</strong> Punches through wind easily, but takes a massive bounce and rolls far.<br>
-            <strong>High (Floater):</strong> Gets pushed heavily by the wind, but lands soft with very little roll.
+            <strong>Low (Line Drive):</strong> Subtracts 2 from the wind, and the push never goes below 0. A 2–3 wind becomes 0–1. It then takes a massive bounce and rolls far. While Low is selected, "Wind: -2" appears beside Bnc and Roll.<br>
+            <strong>High (Floater):</strong> Takes the full wind on the badge, but lands soft with very little roll.
           </p>
         </div>
 
@@ -392,7 +428,7 @@
         <div style="margin-bottom: 15px;">
           <h3 style="margin: 0 0 5px 0;">Wind, slopes, and scoring</h3>
           <p style="margin: 0; font-size: 15px; line-height: 1.4;">
-            The wind range is how many hexes the ball can be pushed after you pick a landing spot. Arrows are slopes: rolling with one is cheap, rolling against one costs extra, and a ball that stops on a slope keeps sliding that way.<br>
+            The wind range is how many hexes the ball can be pushed after you pick a landing spot. That is the wind box at the top left. A low shot takes 2 off that range, never going below 0, and shows "Wind: -2" beside Bnc and Roll. Landing Hint (the ◎ button, or the switch on the start screen) marks only the hex the shot comes down on before wind, bounce, and roll. A straight shot uses the hex you picked. A curve uses one fixed hex to that side. Arrows are slopes: rolling with one is cheap, rolling against one costs extra, and a ball that stops on a slope keeps sliding that way.<br>
             One shot per hole. Lowest score wins. Score is hexes from the pin, plus a penalty: fairway 1, rough 2, bunker 3, water or out of bounds 4. The hole itself is 0.
           </p>
         </div>
@@ -404,11 +440,18 @@
     <!-- Editor Export Modal -->
     <div id="export-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(62, 58, 53, 0.6); display: none; justify-content: center; align-items: center; z-index: 300;">
       <div class="sketch-box" style="padding: 20px; width: 90%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto;">
-        <h3 style="margin: 0; text-align: center;">Map Data JSON</h3>
-        <textarea id="export-textarea" style="width: 100%; height: 200px; font-family: monospace; font-size: 12px; resize: none; border: 2px solid var(--ink); border-radius: 4px; padding: 5px; box-sizing: border-box;"></textarea>
+        <h3 style="margin: 0; text-align: center;">Save Map</h3>
+        <p style="margin: 0; font-size: 14px; line-height: 1.4;">Saved maps stay in this browser and show up in the map list. Copy the JSON only if you want to bake a map into the game file.</p>
+        <input id="export-name" type="text" maxlength="40" placeholder="Map name" class="slot-input" style="font-size: 16px; padding: 8px;">
+        <textarea id="export-textarea" style="width: 100%; height: 160px; font-family: monospace; font-size: 12px; resize: none; border: 2px solid var(--ink); border-radius: 4px; padding: 5px; box-sizing: border-box;"></textarea>
         <div style="display: flex; gap: 10px;">
-          <button class="btn-action" data-action="exportCopy">Copy</button>
-          <button class="btn-action" style="background: #d32f2f;" data-action="exportClose">Close</button>
+          <button class="btn-action" data-action="exportSave" style="flex: 1;">Save in this browser</button>
+          <button class="btn-action" data-action="exportCopy" style="flex: 1; background: #5d4037;">Copy JSON</button>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button id="export-delete" class="btn-action" data-action="exportDelete" style="display: none; flex: 1; background: #d32f2f;">Delete saved map</button>
+          <button class="btn-action" data-action="exportLoad" style="flex: 1; background: #455a64;">Load this JSON</button>
+          <button class="btn-action" style="flex: 1; background: #757575;" data-action="exportClose">Close</button>
         </div>
       </div>
     </div>
@@ -529,9 +572,7 @@
                 const clubIcons = { WEDGE: "(WG)", IRON: "(IR)", WOOD: "(WD)" };
                 document.getElementById('ui-club-display').innerText = `${clubIcons[target.club]} ${target.club}`;
             }
-            if (prop === 'wind') {
-                document.getElementById('ui-wind').innerText = `${target.wind.min}-${target.wind.max} ${CONFIG.WIND_ABBR[target.wind.dir]}`;
-            }
+            if (prop === 'wind') GameController.refreshWindReadout();
             return true;
         }
     });
@@ -634,6 +675,15 @@
         }
 
         return { intent, landingHex, bounceHex, rollPath: path, finalHex: pos };
+      },
+
+      landingHexes: (intent) => {
+        if (!intent.targetHex) return [];
+        const shapeDef = CONFIG.SHAPES[intent.shape] || CONFIG.SHAPES.Straight;
+        if (!shapeDef.mag) return [];
+        const landing = HexUtils.add(intent.targetHex, CONFIG.DIR[shapeDef.dir], shapeDef.mag);
+        if (landing.q === intent.targetHex.q && landing.r === intent.targetHex.r) return [];
+        return [landing];
       }
     };
 
@@ -909,8 +959,8 @@
             const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
             poly.setAttribute("points", pts.trim());
             poly.setAttribute("fill", color.fill);
-            poly.setAttribute("stroke", color.base);
-            poly.setAttribute("stroke-width", "2.5");
+            poly.setAttribute("stroke", color.stroke || color.base);
+            poly.setAttribute("stroke-width", color.strokeWidth || "2.5");
             poly.setAttribute("stroke-linejoin", "round");
             if (state.isDashed) poly.setAttribute("stroke-dasharray", "4 3");
             
@@ -1213,6 +1263,33 @@
               group.players.forEach(p => { AnimationEngine.applyHexColor(group.hex, p.color, true); });
               AnimationEngine.renderIntentIcons(group.hex, group.players);
           });
+          this.paintLandingMarks();
+      },
+
+      paintLandingMarks: function() {
+          const layer = document.getElementById('landing-layer');
+          if (!layer) return;
+          layer.innerHTML = '';
+          if (!showLandingHeatmap) return;
+          GameState.players.forEach(player => {
+              PhysicsEngine.landingHexes(player.intent).forEach(hex => {
+                  const coords = HexUtils.toPixel(hex.q, hex.r);
+                  const R = CONFIG.UI.hexSize;
+                  let points = '';
+                  for (let i = 0; i < 6; i++) {
+                      const angle = Math.PI / 180 * (60 * i);
+                      points += `${coords.x + R * Math.cos(angle)},${coords.y + R * Math.sin(angle)} `;
+                  }
+                  const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                  poly.setAttribute('points', points.trim());
+                  poly.setAttribute('fill', HexUtils.hexToRgba(player.color.base, 0.2));
+                  poly.setAttribute('stroke', HexUtils.hexToRgba(player.color.base, 0.45));
+                  poly.setAttribute('stroke-width', '1.5');
+                  poly.setAttribute('stroke-linejoin', 'round');
+                  poly.setAttribute('data-player', player.id);
+                  layer.appendChild(poly);
+              });
+          });
       },
 
       loadCurrentPlayerTurn: function() {
@@ -1231,6 +1308,7 @@
                     p.intent = intent;
                     banner.innerText = `${p.name}`;
                     this.refreshHighlights();
+                    this.refreshWindReadout();
                     setTimeout(() => { this.lockShot(); }, 1200);
                 });
             }, 800);
@@ -1273,6 +1351,7 @@
         GameState.phase = 'animating'; AnimationEngine.clearHighlights(); 
         this.updatePlayerControls(); document.getElementById('turn-banner').style.display = 'none';
         GameState.players.forEach(p => { if (p.intent.targetHex) AnimationEngine.applyHexColor(p.intent.targetHex, p.color, true); });
+        this.paintLandingMarks();
 
         let resultsData = []; let holeDataSnapshot = { club: GameState.club, wind: GameState.wind, pin: GameState.holeData.pin };
         GameState.players.forEach(p => {
@@ -1348,6 +1427,7 @@
         const p = GameState.players[this.currentPlayerIndex] || GameState.players[0];
         const isReady = p && p.intent.targetHex && p.intent.shape;
         const isIntent = GameState.phase === 'intent'; const isFinished = GameState.phase === 'finished';
+        document.getElementById('game-footer').classList.toggle('shot-locked', !isIntent);
 
         const playBtn = document.getElementById('btn-play');
         playBtn.disabled = !isReady || !isIntent || p.isBot; playBtn.style.display = isFinished ? 'none' : 'block';
@@ -1362,6 +1442,19 @@
             const club = CONFIG.CLUBS[GameState.club]; const traj = club.traj[p.intent.trajectory || 'LOW'];
             document.getElementById('ui-bounce').innerText = `${traj.bounce[0]}-${traj.bounce[1]}`; document.getElementById('ui-roll').innerText = `${traj.roll[0]}-${traj.roll[1]}`;
         }
+        this.refreshWindReadout();
+      },
+
+      refreshWindReadout: function() {
+        const wind = GameState.wind;
+        const range = (min, max) => min === max ? String(min) : `${min}-${max}`;
+        const windEl = document.getElementById('ui-wind');
+        if (!windEl || !wind) return;
+        windEl.textContent = `${range(wind.min, wind.max)} ${CONFIG.WIND_ABBR[wind.dir] || ''}`.trim();
+        const lowEl = document.getElementById('ui-wind-low');
+        const p = GameState.players[this.currentPlayerIndex];
+        const show = GameState.phase === 'intent' && p && p.intent && p.intent.trajectory === 'LOW' && (!p.isBot || p.intent.targetHex);
+        lowEl.classList.toggle('is-on', !!show);
       },
 
       generateHoleStats: function() {
@@ -1398,8 +1491,15 @@
           }
           
           const closeBtn = document.getElementById('scorecard-close-btn');
-          if (GameState.phase === 'gameover') { closeBtn.innerText = "Play Again"; closeBtn.style.background = CONFIG.COLORS.win; closeBtn.onclick = () => location.reload(); } 
-          else { closeBtn.innerText = "Close"; closeBtn.style.background = CONFIG.COLORS.lose; closeBtn.onclick = () => this.toggleScorecard(); }
+          if (GameState.phase === 'gameover') {
+            closeBtn.innerText = "Play Again";
+            closeBtn.style.background = CONFIG.COLORS.win;
+            closeBtn.setAttribute('data-action', 'playAgain');
+          } else {
+            closeBtn.innerText = "Close";
+            closeBtn.style.background = CONFIG.COLORS.lose;
+            closeBtn.setAttribute('data-action', 'toggleScorecard');
+          }
           modal.style.display = 'flex';
         }
       }
@@ -1409,7 +1509,7 @@
        7. MAP EDITOR 
        ========================================= */
     const EditorController = {
-        tiles: [], mode: 'terrain',
+        tiles: [], mode: 'terrain', editingId: null, draftName: 'Custom Map',
         terrainCycle: ['green', 'fairway', 'rough', 'sand', 'water', 'ob'],
         arrowCycle: [null, 'North', 'North-East', 'South-East', 'South', 'South-West', 'North-West'],
 
@@ -1420,8 +1520,13 @@
             document.getElementById('game-footer').style.display = 'none';
             document.getElementById('editor-toolbar').style.display = 'flex';
 
+            const map = getMapByKey(lobbyConfig.mapKey);
+            this.editingId = map.source === 'saved' ? map.id : null;
+            this.draftName = map.name || 'Custom Map';
+            if (map.tiles && map.tiles.length) this.loadTiles(map.tiles);
+            else this.generateGrid(9, 'blank');
+
             Viewport.init();
-            this.generateBlankGrid(9);
             GridRenderer.render(this.tiles);
             GridRenderer.updateBounds(this.tiles);
         },
@@ -1441,19 +1546,39 @@
             document.getElementById('btn-edit-arrow').classList.toggle('active', mode === 'arrow');
         },
 
-        generateBlankGrid: function(radius) {
+        generateGrid: function(radius, fill) {
             this.tiles = [];
             for (let q = -radius; q <= radius; q++) {
                 let r1 = Math.max(-radius, -q - radius);
                 let r2 = Math.min(radius, -q + radius);
                 for (let r = r1; r <= r2; r++) {
-                    let dist = Math.max(Math.abs(q), Math.abs(-q - r), Math.abs(r));
-                    let type = 'green';
-                    if (dist === radius) type = 'rough';
-                    else if (dist === radius - 1) type = 'fairway';
+                    let type = fill;
+                    if (fill === 'blank') {
+                        let dist = Math.max(Math.abs(q), Math.abs(-q - r), Math.abs(r));
+                        type = dist === radius ? 'rough' : dist === radius - 1 ? 'fairway' : 'green';
+                    }
                     this.tiles.push({ q, r, type: type, arrow: null });
                 }
             }
+        },
+
+        loadTiles: function(tiles) {
+            this.generateGrid(9, 'ob');
+            tiles.forEach(t => {
+                const tile = this.tiles.find(x => x.q === t.q && x.r === t.r);
+                if (!tile || !this.terrainCycle.includes(t.type)) return;
+                tile.type = t.type;
+                tile.arrow = this.arrowCycle.includes(t.arrow) ? t.arrow : null;
+            });
+        },
+
+        newMap: function() {
+            if (!confirm('Start a blank map? Unsaved edits on screen will be cleared.')) return;
+            this.editingId = null;
+            this.draftName = 'Custom Map';
+            this.generateGrid(9, 'blank');
+            GridRenderer.render(this.tiles);
+            GridRenderer.updateBounds(this.tiles);
         },
 
         onHexClick: function(q, r) {
@@ -1471,22 +1596,89 @@
             GridRenderer.render(this.tiles);
         },
 
-        export: function() {
-            const exportData = this.tiles.filter(t => t.type !== 'ob' || t.arrow).map(t => {
-                let obj = { q: t.q, r: t.r, type: t.type };
+        exportTiles: function() {
+            return this.tiles.filter(t => t.type !== 'ob' || t.arrow).map(t => {
+                const obj = { q: t.q, r: t.r, type: t.type };
                 if (t.arrow) obj.arrow = t.arrow;
                 return obj;
             });
-            const mapObject = { name: "Custom Map", tiles: exportData };
-            document.getElementById('export-textarea').value = JSON.stringify(mapObject, null, 0);
+        },
+
+        mapObject: function() {
+            const nameInput = document.getElementById('export-name');
+            const name = ((nameInput && nameInput.value) || this.draftName || 'Custom Map').trim().slice(0, 40) || 'Custom Map';
+            return { name, tiles: this.exportTiles() };
+        },
+
+        refreshExportText: function() {
+            document.getElementById('export-textarea').value = JSON.stringify(this.mapObject(), null, 0);
+        },
+
+        export: function() {
+            const nameInput = document.getElementById('export-name');
+            nameInput.value = this.draftName || 'Custom Map';
+            this.refreshExportText();
+            document.getElementById('export-delete').style.display = this.editingId ? 'block' : 'none';
             document.getElementById('export-modal').style.display = 'flex';
+            nameInput.focus();
+        },
+
+        saveToBrowser: function() {
+            const map = this.mapObject();
+            if (!map.tiles.length) { alert('Paint a few hexes before saving.'); return; }
+            const duplicate = customMaps.find(m => m.name.toLowerCase() === map.name.toLowerCase() && m.id !== this.editingId);
+            if (duplicate && !confirm(`Replace the saved map "${duplicate.name}"?`)) return;
+            const id = (duplicate && duplicate.id) || this.editingId || ('m' + Date.now().toString(36));
+            const record = { id, name: map.name, tiles: map.tiles };
+            const previous = customMaps;
+            customMaps = customMaps.filter(m => m.id !== id && m.id !== this.editingId).concat(record);
+            if (!persistCustomMaps()) { customMaps = previous; return; }
+            this.editingId = id;
+            this.draftName = map.name;
+            lobbyConfig.mapKey = 'saved:' + id;
+            renderLobbyMaps();
+            document.getElementById('export-delete').style.display = 'block';
+            alert('Saved in this browser. It is now in the map list.');
+        },
+
+        loadFromText: function() {
+            let parsed;
+            try { parsed = JSON.parse(document.getElementById('export-textarea').value); }
+            catch (e) { alert('That JSON is not a map this editor can read.'); return; }
+            const tiles = parsed && Array.isArray(parsed.tiles) ? parsed.tiles.map(normalizeTile).filter(Boolean) : [];
+            if (!tiles.length) { alert('That JSON has no playable hexes.'); return; }
+            this.loadTiles(tiles);
+            this.editingId = null;
+            if (parsed.name) this.draftName = String(parsed.name).trim().slice(0, 40) || 'Custom Map';
+            document.getElementById('export-name').value = this.draftName;
+            document.getElementById('export-delete').style.display = 'none';
+            GridRenderer.render(this.tiles);
+            GridRenderer.updateBounds(this.tiles);
+            this.refreshExportText();
+        },
+
+        deleteEditing: function() {
+            if (!this.editingId) return;
+            const current = customMaps.find(m => m.id === this.editingId);
+            if (!current || !confirm(`Remove "${current.name}" from this browser?`)) return;
+            const previous = customMaps;
+            customMaps = customMaps.filter(m => m.id !== this.editingId);
+            if (!persistCustomMaps()) { customMaps = previous; return; }
+            this.editingId = null;
+            lobbyConfig.mapKey = 'builtin:0';
+            renderLobbyMaps();
+            document.getElementById('export-delete').style.display = 'none';
+            alert('Removed from this browser. This drawing is still open if you want to save it again.');
         },
         
         copyExport: function() {
-            navigator.clipboard.writeText(document.getElementById('export-textarea').value).then(() => {
+            const text = document.getElementById('export-textarea').value;
+            navigator.clipboard.writeText(text).then(() => {
                 alert('Copied to clipboard!');
-            }).catch(err => {
-                console.error('Could not copy text: ', err);
+            }).catch(() => {
+                document.getElementById('export-textarea').focus();
+                document.getElementById('export-textarea').select();
+                alert('Clipboard blocked. The JSON is selected so you can copy it manually.');
             });
         },
 
@@ -1508,7 +1700,109 @@
         {"name":"The Ridge","tiles":[{"q":-9,"r":0,"type":"rough"},{"q":-9,"r":1,"type":"rough"},{"q":-9,"r":2,"type":"rough"},{"q":-9,"r":3,"type":"rough"},{"q":-9,"r":4,"type":"rough"},{"q":-9,"r":5,"type":"rough"},{"q":-9,"r":6,"type":"rough"},{"q":-9,"r":7,"type":"rough"},{"q":-9,"r":8,"type":"rough"},{"q":-9,"r":9,"type":"rough"},{"q":-8,"r":-1,"type":"rough"},{"q":-8,"r":0,"type":"fairway"},{"q":-8,"r":1,"type":"fairway"},{"q":-8,"r":2,"type":"fairway","arrow":"North-East"},{"q":-8,"r":3,"type":"sand"},{"q":-8,"r":4,"type":"sand"},{"q":-8,"r":5,"type":"sand"},{"q":-8,"r":6,"type":"sand"},{"q":-8,"r":7,"type":"fairway"},{"q":-8,"r":8,"type":"fairway"},{"q":-8,"r":9,"type":"rough"},{"q":-7,"r":-2,"type":"rough"},{"q":-7,"r":-1,"type":"fairway"},{"q":-7,"r":0,"type":"green"},{"q":-7,"r":1,"type":"green"},{"q":-7,"r":2,"type":"fairway","arrow":"North-East"},{"q":-7,"r":3,"type":"sand"},{"q":-7,"r":4,"type":"sand"},{"q":-7,"r":5,"type":"sand"},{"q":-7,"r":6,"type":"fairway","arrow":"South-East"},{"q":-7,"r":7,"type":"green"},{"q":-7,"r":8,"type":"fairway"},{"q":-7,"r":9,"type":"rough"},{"q":-6,"r":-3,"type":"rough"},{"q":-6,"r":-2,"type":"fairway"},{"q":-6,"r":-1,"type":"green"},{"q":-6,"r":0,"type":"green"},{"q":-6,"r":1,"type":"green"},{"q":-6,"r":2,"type":"fairway","arrow":"North-East"},{"q":-6,"r":3,"type":"sand"},{"q":-6,"r":4,"type":"sand"},{"q":-6,"r":5,"type":"fairway","arrow":"South-East"},{"q":-6,"r":6,"type":"green"},{"q":-6,"r":7,"type":"green"},{"q":-6,"r":8,"type":"fairway"},{"q":-6,"r":9,"type":"rough"},{"q":-5,"r":-4,"type":"rough"},{"q":-5,"r":-3,"type":"fairway"},{"q":-5,"r":-2,"type":"green"},{"q":-5,"r":-1,"type":"green"},{"q":-5,"r":0,"type":"green"},{"q":-5,"r":1,"type":"green"},{"q":-5,"r":2,"type":"fairway","arrow":"North-East"},{"q":-5,"r":3,"type":"fairway","arrow":"South-East"},{"q":-5,"r":4,"type":"fairway","arrow":"South-East"},{"q":-5,"r":5,"type":"green"},{"q":-5,"r":6,"type":"green"},{"q":-5,"r":7,"type":"green"},{"q":-5,"r":8,"type":"fairway","arrow":"South-East"},{"q":-5,"r":9,"type":"rough","arrow":"South-East"},{"q":-4,"r":-5,"type":"rough","arrow":"South"},{"q":-4,"r":-4,"type":"fairway","arrow":"South"},{"q":-4,"r":-3,"type":"green"},{"q":-4,"r":-2,"type":"green"},{"q":-4,"r":-1,"type":"green"},{"q":-4,"r":0,"type":"green"},{"q":-4,"r":1,"type":"green","arrow":"North"},{"q":-4,"r":2,"type":"green"},{"q":-4,"r":3,"type":"green"},{"q":-4,"r":4,"type":"green"},{"q":-4,"r":5,"type":"green"},{"q":-4,"r":6,"type":"green"},{"q":-4,"r":7,"type":"green","arrow":"South-East"},{"q":-4,"r":8,"type":"fairway","arrow":"South-East"},{"q":-4,"r":9,"type":"rough","arrow":"South-East"},{"q":-3,"r":-6,"type":"rough"},{"q":-3,"r":-5,"type":"fairway","arrow":"South"},{"q":-3,"r":-4,"type":"fairway","arrow":"South"},{"q":-3,"r":-3,"type":"green"},{"q":-3,"r":-2,"type":"green"},{"q":-3,"r":-1,"type":"green"},{"q":-3,"r":0,"type":"green","arrow":"North-West"},{"q":-3,"r":1,"type":"green"},{"q":-3,"r":2,"type":"green"},{"q":-3,"r":3,"type":"green"},{"q":-3,"r":4,"type":"green"},{"q":-3,"r":5,"type":"green"},{"q":-3,"r":6,"type":"green","arrow":"South-East"},{"q":-3,"r":7,"type":"green"},{"q":-3,"r":8,"type":"fairway"},{"q":-3,"r":9,"type":"water"},{"q":-2,"r":-7,"type":"rough"},{"q":-2,"r":-6,"type":"fairway","arrow":"South-West"},{"q":-2,"r":-5,"type":"fairway","arrow":"South-West"},{"q":-2,"r":-4,"type":"green","arrow":"South-West"},{"q":-2,"r":-3,"type":"green","arrow":"South-West"},{"q":-2,"r":-2,"type":"green","arrow":"North-West"},{"q":-2,"r":-1,"type":"green","arrow":"North-West"},{"q":-2,"r":0,"type":"green"},{"q":-2,"r":1,"type":"green"},{"q":-2,"r":2,"type":"green"},{"q":-2,"r":3,"type":"green"},{"q":-2,"r":4,"type":"green","arrow":"South-East"},{"q":-2,"r":5,"type":"green","arrow":"South-East"},{"q":-2,"r":6,"type":"green"},{"q":-2,"r":7,"type":"green"},{"q":-2,"r":8,"type":"water"},{"q":-2,"r":9,"type":"water"},{"q":-1,"r":-8,"type":"rough"},{"q":-1,"r":-7,"type":"sand"},{"q":-1,"r":-6,"type":"fairway","arrow":"South"},{"q":-1,"r":-5,"type":"fairway","arrow":"South-West"},{"q":-1,"r":-4,"type":"green","arrow":"South"},{"q":-1,"r":-3,"type":"green"},{"q":-1,"r":-2,"type":"green"},{"q":-1,"r":-1,"type":"green"},{"q":-1,"r":0,"type":"green"},{"q":-1,"r":1,"type":"green"},{"q":-1,"r":2,"type":"green"},{"q":-1,"r":3,"type":"green","arrow":"South-East"},{"q":-1,"r":4,"type":"green"},{"q":-1,"r":5,"type":"green"},{"q":-1,"r":6,"type":"green"},{"q":-1,"r":7,"type":"water"},{"q":-1,"r":8,"type":"water"},{"q":-1,"r":9,"type":"water"},{"q":0,"r":-9,"type":"rough"},{"q":0,"r":-8,"type":"sand"},{"q":0,"r":-7,"type":"sand"},{"q":0,"r":-6,"type":"fairway","arrow":"South"},{"q":0,"r":-5,"type":"fairway","arrow":"South"},{"q":0,"r":-4,"type":"green"},{"q":0,"r":-3,"type":"green"},{"q":0,"r":-2,"type":"green"},{"q":0,"r":-1,"type":"green"},{"q":0,"r":0,"type":"green"},{"q":0,"r":1,"type":"green","arrow":"South-East"},{"q":0,"r":2,"type":"green","arrow":"South-East"},{"q":0,"r":3,"type":"green"},{"q":0,"r":4,"type":"green"},{"q":0,"r":5,"type":"green"},{"q":0,"r":6,"type":"green"},{"q":0,"r":7,"type":"water"},{"q":0,"r":8,"type":"water"},{"q":0,"r":9,"type":"water"},{"q":1,"r":-9,"type":"rough"},{"q":1,"r":-8,"type":"sand"},{"q":1,"r":-7,"type":"fairway"},{"q":1,"r":-6,"type":"fairway","arrow":"South"},{"q":1,"r":-5,"type":"green","arrow":"South"},{"q":1,"r":-4,"type":"green"},{"q":1,"r":-3,"type":"green"},{"q":1,"r":-2,"type":"green"},{"q":1,"r":-1,"type":"green"},{"q":1,"r":0,"type":"green","arrow":"South-East"},{"q":1,"r":1,"type":"green"},{"q":1,"r":2,"type":"green"},{"q":1,"r":3,"type":"green"},{"q":1,"r":4,"type":"green"},{"q":1,"r":5,"type":"green"},{"q":1,"r":6,"type":"water"},{"q":1,"r":7,"type":"water"},{"q":1,"r":8,"type":"water"},{"q":2,"r":-9,"type":"rough"},{"q":2,"r":-8,"type":"fairway"},{"q":2,"r":-7,"type":"fairway","arrow":"South"},{"q":2,"r":-6,"type":"fairway","arrow":"South"},{"q":2,"r":-5,"type":"green"},{"q":2,"r":-4,"type":"green"},{"q":2,"r":-3,"type":"green"},{"q":2,"r":-2,"type":"green"},{"q":2,"r":-1,"type":"green","arrow":"South"},{"q":2,"r":0,"type":"green"},{"q":2,"r":1,"type":"green"},{"q":2,"r":2,"type":"green"},{"q":2,"r":3,"type":"green"},{"q":2,"r":4,"type":"green"},{"q":2,"r":5,"type":"water"},{"q":2,"r":6,"type":"water"},{"q":2,"r":7,"type":"water"},{"q":3,"r":-9,"type":"rough"},{"q":3,"r":-8,"type":"fairway","arrow":"South"},{"q":3,"r":-7,"type":"fairway","arrow":"South"},{"q":3,"r":-6,"type":"green","arrow":"South"},{"q":3,"r":-5,"type":"green"},{"q":3,"r":-4,"type":"green"},{"q":3,"r":-3,"type":"green"},{"q":3,"r":-2,"type":"green","arrow":"South"},{"q":3,"r":-1,"type":"green"},{"q":3,"r":0,"type":"green"},{"q":3,"r":1,"type":"green"},{"q":3,"r":2,"type":"water"},{"q":3,"r":3,"type":"water"},{"q":3,"r":4,"type":"water"},{"q":3,"r":5,"type":"water"},{"q":3,"r":6,"type":"water"},{"q":4,"r":-9,"type":"rough"},{"q":4,"r":-8,"type":"fairway","arrow":"South"},{"q":4,"r":-7,"type":"fairway","arrow":"South"},{"q":4,"r":-6,"type":"green"},{"q":4,"r":-5,"type":"green"},{"q":4,"r":-4,"type":"green"},{"q":4,"r":-3,"type":"green","arrow":"South"},{"q":4,"r":-2,"type":"green"},{"q":4,"r":-1,"type":"green"},{"q":4,"r":0,"type":"green"},{"q":4,"r":1,"type":"green"},{"q":4,"r":2,"type":"water"},{"q":4,"r":3,"type":"water"},{"q":4,"r":4,"type":"water"},{"q":4,"r":5,"type":"water"},{"q":5,"r":-9,"type":"rough"},{"q":5,"r":-8,"type":"fairway","arrow":"South"},{"q":5,"r":-7,"type":"green"},{"q":5,"r":-6,"type":"green"},{"q":5,"r":-5,"type":"green"},{"q":5,"r":-4,"type":"green"},{"q":5,"r":-3,"type":"green","arrow":"South"},{"q":5,"r":-2,"type":"green"},{"q":5,"r":-1,"type":"green"},{"q":5,"r":0,"type":"green"},{"q":5,"r":1,"type":"water"},{"q":5,"r":2,"type":"water"},{"q":5,"r":3,"type":"water"},{"q":5,"r":4,"type":"water"},{"q":6,"r":-9,"type":"rough"},{"q":6,"r":-8,"type":"fairway","arrow":"South-West"},{"q":6,"r":-7,"type":"green"},{"q":6,"r":-6,"type":"green"},{"q":6,"r":-5,"type":"green"},{"q":6,"r":-4,"type":"green","arrow":"South"},{"q":6,"r":-3,"type":"green"},{"q":6,"r":-2,"type":"green"},{"q":6,"r":-1,"type":"green"},{"q":6,"r":0,"type":"green"},{"q":6,"r":1,"type":"water"},{"q":6,"r":2,"type":"water"},{"q":6,"r":3,"type":"water"},{"q":7,"r":-9,"type":"rough"},{"q":7,"r":-8,"type":"fairway"},{"q":7,"r":-7,"type":"green"},{"q":7,"r":-6,"type":"green"},{"q":7,"r":-5,"type":"green","arrow":"South"},{"q":7,"r":-4,"type":"green"},{"q":7,"r":-3,"type":"green"},{"q":7,"r":-2,"type":"green"},{"q":7,"r":-1,"type":"green"},{"q":7,"r":0,"type":"water"},{"q":7,"r":1,"type":"water"},{"q":7,"r":2,"type":"water"},{"q":8,"r":-9,"type":"rough"},{"q":8,"r":-8,"type":"fairway"},{"q":8,"r":-7,"type":"fairway"},{"q":8,"r":-6,"type":"fairway","arrow":"South"},{"q":8,"r":-5,"type":"fairway","arrow":"South"},{"q":8,"r":-4,"type":"water"},{"q":8,"r":-3,"type":"water"},{"q":8,"r":-2,"type":"water"},{"q":8,"r":-1,"type":"water"},{"q":8,"r":0,"type":"water"},{"q":8,"r":1,"type":"water"},{"q":9,"r":-9,"type":"rough"},{"q":9,"r":-8,"type":"rough"},{"q":9,"r":-7,"type":"rough","arrow":"South"},{"q":9,"r":-6,"type":"rough","arrow":"South"},{"q":9,"r":-5,"type":"water"},{"q":9,"r":-4,"type":"water"},{"q":9,"r":-3,"type":"water"},{"q":9,"r":-2,"type":"water"},{"q":9,"r":-1,"type":"water"},{"q":9,"r":0,"type":"water"}]}
     ];
 
-    let lobbyConfig = { holeOptions: [3, 6, 9, 18], holeIndex: 0, mapIndex: 0 };
+    const CUSTOM_MAPS_KEY = 'hexlinks-custom-maps';
+    const LANDING_MAP_KEY = 'hexlinks-landing-map';
+    let showLandingHeatmap = false;
+    try { showLandingHeatmap = localStorage.getItem(LANDING_MAP_KEY) === '1'; } catch (e) {}
+
+    function updateLandingMapButtons() {
+        const lobbyBtn = document.getElementById('btn-landing-map');
+        const hudBtn = document.getElementById('btn-landing-map-hud');
+        lobbyBtn.classList.toggle('is-on', showLandingHeatmap);
+        lobbyBtn.setAttribute('aria-checked', showLandingHeatmap ? 'true' : 'false');
+        hudBtn.classList.toggle('active', showLandingHeatmap);
+        hudBtn.setAttribute('aria-pressed', showLandingHeatmap ? 'true' : 'false');
+    }
+
+    function toggleLandingMap() {
+        showLandingHeatmap = !showLandingHeatmap;
+        try { localStorage.setItem(LANDING_MAP_KEY, showLandingHeatmap ? '1' : '0'); } catch (e) {}
+        updateLandingMapButtons();
+        if (GameState.phase === 'intent' || GameState.phase === 'animating' || GameState.phase === 'finished') {
+            GameController.paintLandingMarks();
+        }
+    }
+    let editorAccess = new URLSearchParams(location.search).has('editor');
+    const TILE_TYPES = ['green', 'fairway', 'rough', 'sand', 'water', 'ob'];
+    const TILE_ARROWS = ['North', 'North-East', 'South-East', 'South', 'South-West', 'North-West'];
+    let customMaps = [];
+    let lobbyConfig = { holeOptions: [3, 6, 9, 18], holeIndex: 0, mapKey: 'builtin:0' };
+
+    function normalizeTile(t) {
+        if (!t || !Number.isFinite(+t.q) || !Number.isFinite(+t.r)) return null;
+        const type = String(t.type || '');
+        if (!TILE_TYPES.includes(type)) return null;
+        const tile = { q: +t.q, r: +t.r, type };
+        if (TILE_ARROWS.includes(t.arrow)) tile.arrow = t.arrow;
+        return tile;
+    }
+
+    function loadCustomMaps() {
+        try {
+            const raw = localStorage.getItem(CUSTOM_MAPS_KEY);
+            const parsed = raw ? JSON.parse(raw) : [];
+            if (!Array.isArray(parsed)) return [];
+            return parsed.map((m, i) => {
+                if (!m || typeof m.name !== 'string' || !Array.isArray(m.tiles)) return null;
+                const tiles = m.tiles.map(normalizeTile).filter(Boolean);
+                const name = m.name.trim().slice(0, 40);
+                if (!name || !tiles.length) return null;
+                return { id: m.id ? String(m.id) : ('m' + i), name, tiles };
+            }).filter(Boolean);
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function persistCustomMaps() {
+        try {
+            localStorage.setItem(CUSTOM_MAPS_KEY, JSON.stringify(customMaps));
+            return true;
+        } catch (e) {
+            alert('This browser blocked saving the map. You can still copy the JSON.');
+            return false;
+        }
+    }
+
+    function editorUnlocked() {
+        return editorAccess;
+    }
+
+    function playAgain() {
+        const url = new URL(location.href);
+        url.searchParams.delete('editor');
+        location.replace(url.pathname + url.search + url.hash);
+    }
+
+    function getSelectableMaps() {
+        const builtin = MAP_COLLECTION.map((m, i) => ({ key: 'builtin:' + i, source: 'builtin', name: m.name, tiles: m.tiles }));
+        const saved = customMaps.map(m => ({ key: 'saved:' + m.id, source: 'saved', id: m.id, name: m.name, tiles: m.tiles }));
+        return { builtin, saved, all: builtin.concat(saved) };
+    }
+
+    function getMapByKey(key) {
+        const maps = getSelectableMaps();
+        return maps.all.find(m => m.key === key) || maps.builtin[0];
+    }
+
+    function updateEditorAccess() {
+        const unlocked = editorUnlocked();
+        document.getElementById('btn-open-editor').style.display = unlocked ? 'block' : 'none';
+        const selected = getMapByKey(lobbyConfig.mapKey);
+        document.getElementById('btn-delete-saved-map').style.display = unlocked && selected.source === 'saved' ? 'block' : 'none';
+    }
+
+    function deleteSavedMap() {
+        const map = getMapByKey(lobbyConfig.mapKey);
+        if (map.source !== 'saved') return;
+        if (!confirm(`Remove "${map.name}" from this browser?`)) return;
+        const previous = customMaps;
+        customMaps = customMaps.filter(m => m.id !== map.id);
+        if (!persistCustomMaps()) { customMaps = previous; return; }
+        if (EditorController.editingId === map.id) EditorController.editingId = null;
+        lobbyConfig.mapKey = 'builtin:0';
+        renderLobbyMaps();
+    }
     let lobbySlots = [
         { type: 'Human', name: 'Player 1', color: CONFIG.COLORS.defaultSlot[0], difficulty: 'Medium' },
         { type: 'Bot', name: 'Player 2', color: CONFIG.COLORS.defaultSlot[1], difficulty: 'Medium' },
@@ -1517,15 +1811,27 @@
     ];
 
     function renderLobbyMaps() {
+        const maps = getSelectableMaps();
+        if (!maps.all.some(m => m.key === lobbyConfig.mapKey)) lobbyConfig.mapKey = 'builtin:0';
         const select = document.getElementById('lobby-map-select');
         select.innerHTML = '';
-        MAP_COLLECTION.forEach((m, i) => {
-            const opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = m.name;
-            select.appendChild(opt);
-        });
-        select.onchange = (e) => lobbyConfig.mapIndex = parseInt(e.target.value);
+        const addGroup = (label, groupMaps) => {
+            if (!groupMaps.length) return;
+            const group = document.createElement('optgroup');
+            group.label = label;
+            groupMaps.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.key;
+                opt.textContent = m.name;
+                if (m.key === lobbyConfig.mapKey) opt.selected = true;
+                group.appendChild(opt);
+            });
+            select.appendChild(group);
+        };
+        addGroup('Courses', maps.builtin);
+        addGroup('Saved on this browser', maps.saved);
+        select.onchange = (e) => { lobbyConfig.mapKey = e.target.value; updateEditorAccess(); };
+        updateEditorAccess();
     }
 
     function renderLobbySlots() {
@@ -1591,7 +1897,7 @@
     function startRound() {
         let activeSlots = lobbySlots.filter(s => s.type !== 'None');
         if (activeSlots.length === 0) return; 
-        const selectedMap = MAP_COLLECTION[lobbyConfig.mapIndex];
+        const selectedMap = getMapByKey(lobbyConfig.mapKey);
         if (!selectedMap || !Array.isArray(selectedMap.tiles)) {
             alert('Invalid Map Selection'); return;
         }
@@ -1612,17 +1918,24 @@
             if (action === 'updateLobbyHoles') updateLobbyHoles(parseInt(val));
             else if (action === 'startRound') startRound();
             else if (action === 'startEditor') EditorController.start();
+            else if (action === 'deleteSavedMap') deleteSavedMap();
+            else if (action === 'toggleLandingMap') toggleLandingMap();
             else if (action === 'showTutorial') document.getElementById('tutorial-modal').style.display = 'flex';
             else if (action === 'hideTutorial') document.getElementById('tutorial-modal').style.display = 'none';
             else if (action === 'toggleScorecard') GameController.toggleScorecard();
+            else if (action === 'playAgain') playAgain();
             else if (action === 'setShape') GameController.setShape(val);
             else if (action === 'setTrajectory') GameController.setTrajectory(val);
             else if (action === 'lockShot') GameController.lockShot();
             else if (action === 'nextHole') GameController.nextHole();
             else if (action === 'editorSetMode') EditorController.setMode(val);
+            else if (action === 'editorNew') EditorController.newMap();
             else if (action === 'editorExport') EditorController.export();
             else if (action === 'editorExit') EditorController.exit();
+            else if (action === 'exportSave') EditorController.saveToBrowser();
             else if (action === 'exportCopy') EditorController.copyExport();
+            else if (action === 'exportLoad') EditorController.loadFromText();
+            else if (action === 'exportDelete') EditorController.deleteEditing();
             else if (action === 'exportClose') EditorController.closeExport();
             return;
         }
@@ -1642,8 +1955,26 @@
     });
 
     window.addEventListener('DOMContentLoaded', () => {
+        customMaps = loadCustomMaps();
         renderLobbyMaps();
         renderLobbySlots();
+        updateLandingMapButtons();
+
+        let titleClicks = 0;
+        let titleTimer = null;
+        document.getElementById('landing-title').addEventListener('click', () => {
+            titleClicks += 1;
+            clearTimeout(titleTimer);
+            titleTimer = setTimeout(() => { titleClicks = 0; }, 1500);
+            if (titleClicks < 5) return;
+            titleClicks = 0;
+            editorAccess = true;
+            updateEditorAccess();
+        });
+
+        document.getElementById('export-name').addEventListener('input', () => {
+            if (document.getElementById('export-modal').style.display === 'flex') EditorController.refreshExportText();
+        });
     });
 
     })();
