@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Press | Meki Labs</title>
-    <meta name="description" content="Tactical area control on a 7×11 pitch. Place tokens, dominate zones, and press the ball into the net before your opponent does.">
+    <meta name="description" content="Know when to hunt the ball and when to sit off. A two-sided football puzzle of pressing, stealing, and threading a path to goal.">
     <meta property="og:title" content="The Press | Meki Labs">
-    <meta property="og:description" content="Tactical area control on a 7×11 pitch. Place tokens, dominate zones, and press the ball into the net before your opponent does.">
+    <meta property="og:description" content="Know when to hunt the ball and when to sit off. A two-sided football puzzle of pressing, stealing, and threading a path to goal.">
     <meta property="og:image" content="https://mekilabs.com/icons/the-press-banner.png">
     <meta property="og:url" content="https://mekilabs.com/the-press.html">
     <meta property="og:type" content="website">
@@ -222,6 +222,72 @@
             .thick-goal-line-top    { border-bottom: none !important; border-right: 3px solid rgba(var(--t1-rgb), 0.7) !important; }
             .thick-goal-line-bottom { border-top: none !important;    border-left:  3px solid rgba(var(--t2-rgb), 0.7) !important; }
         }
+
+        .skip-turn-btn {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            padding: 0.2rem 0.55rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(24, 24, 27, 0.85);
+            color: #e4e4e7;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .skip-turn-btn:disabled {
+            opacity: 0.28;
+            cursor: not-allowed;
+        }
+        .skip-turn-btn:not(:disabled):hover {
+            background: rgba(255, 255, 255, 0.16);
+            color: #fff;
+        }
+
+        #setup-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        @media (min-width: 640px) and (orientation: landscape) {
+            #setup-screen {
+                max-width: none !important;
+                width: 100%;
+                height: 100%;
+                padding: 1rem 1.5rem !important;
+                justify-content: center;
+            }
+
+            #setup-layout {
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: center;
+                flex: 1;
+                min-height: 0;
+                max-width: 72rem;
+                margin: 0 auto;
+                gap: 1rem;
+            }
+
+            #setup-t2,
+            #setup-t1,
+            #setup-match {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                min-width: 0;
+                max-height: 100%;
+                overflow-y: auto;
+            }
+
+            #setup-match {
+                flex: 1.05;
+            }
+        }
     </style>
 </head>
 <body class="text-white font-sans h-[100dvh] w-screen flex flex-col items-center justify-center overflow-hidden">
@@ -229,13 +295,14 @@
     <!-- SETTINGS / LANDING PAGE -->
     <div id="setup-screen" class="w-full max-w-md h-full flex flex-col justify-center p-6 space-y-6 overflow-y-auto bg-zinc-950 z-50">
         
-        <div class="text-center mb-4">
+        <div class="text-center mb-4 shrink-0">
             <h1 class="text-5xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-500">The Press</h1>
-            <p class="text-sm text-zinc-400 mt-2 tracking-widest">TACTICAL AREA CONTROL</p>
+            <p class="text-sm text-zinc-400 mt-2 tracking-widest">KNOW WHEN TO HUNT</p>
         </div>
 
+        <div id="setup-layout">
         <!-- Team 2 Setup -->
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
+        <div id="setup-t2" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
             <div class="flex justify-between items-center mb-3">
                 <input type="text" id="setup-t2-name" value="Team Red" maxlength="18" class="bg-transparent text-xl font-bold text-white border-b border-zinc-700 focus:border-red-500 outline-none w-1/2 pb-1" />
                 <select id="setup-t2-type" class="bg-zinc-800 text-xs text-zinc-300 rounded px-2 py-1 outline-none border border-zinc-700">
@@ -273,7 +340,7 @@
         </div>
 
         <!-- Match Settings -->
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg flex flex-col space-y-3">
+        <div id="setup-match" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg flex flex-col space-y-3">
             <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800 pb-2">Match Rules</h2>
             <div class="flex items-center space-x-3">
                 <select id="setup-match-type" class="bg-zinc-800 text-sm text-white rounded px-2 py-2 outline-none border border-zinc-700 flex-1" onchange="updateMatchHint()">
@@ -291,12 +358,15 @@
             <p id="match-hint" class="text-xs text-zinc-400 italic">First team to score 3 goals wins.</p>
             <details class="text-xs text-zinc-400 leading-relaxed">
                 <summary class="cursor-pointer uppercase tracking-wider text-zinc-300">How to play</summary>
-                <p class="mt-2">Each side places two tokens in their own half. After kickoff, place a token to grow your control, then pass the ball. Squares touching more of your tokens than your opponent's are yours. A tie is contested, and a pass can enter it but not travel through it. Finish in the far goal. Click the tick, or press Enter, to confirm.</p>
+                <p class="mt-2">Line up around the ball, then take turns growing a press. Own the grass around your players, steal a lane when the other side overcommits, and thread a path into the far net. Skip a turn if you need the pause — you cannot skip twice in a row. Click the tick, or press Enter, to confirm.</p>
             </details>
+            <button onclick="applyConfigAndStart()" class="w-full py-4 bg-zinc-100 text-zinc-900 font-black text-lg uppercase tracking-widest rounded-xl hover:bg-white transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)] mt-2">
+                Start Match
+            </button>
         </div>
 
         <!-- Team 1 Setup -->
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
+        <div id="setup-t1" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
             <div class="flex justify-between items-center mb-3">
                 <input type="text" id="setup-t1-name" value="Team White" maxlength="18" class="bg-transparent text-xl font-bold text-white border-b border-zinc-700 focus:border-white outline-none w-1/2 pb-1" />
                 <select id="setup-t1-type" class="bg-zinc-800 text-xs text-zinc-300 rounded px-2 py-1 outline-none border border-zinc-700">
@@ -332,10 +402,7 @@
                 </div>
             </div>
         </div>
-
-        <button onclick="applyConfigAndStart()" class="w-full py-4 bg-zinc-100 text-zinc-900 font-black text-lg uppercase tracking-widest rounded-xl hover:bg-white transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)] mt-4">
-            Start Match
-        </button>
+        </div>
 
     </div>
 
@@ -354,6 +421,7 @@
                 <span id="label-t2" class="font-bold text-xs sm:text-sm uppercase tracking-widest drop-shadow-md flex-1 text-right">T2 Bench</span>
                 <span id="score-t2-display" class="font-black text-lg px-2 rounded border">0</span>
                 <span class="text-[10px] sm:text-xs font-bold text-zinc-400 uppercase tracking-widest flex-1">Trn: <span id="turns-t2-display">0</span></span>
+                <button type="button" id="skip-t2" class="skip-turn-btn" onclick="requestSkip(false)" disabled title="Skip this turn. You cannot skip twice in a row.">Skip</button>
             </div>
             <div id="hand-t2" class="flex space-x-1 sm:space-x-2 h-6 sm:h-8">
             </div>
@@ -375,6 +443,7 @@
                 <span class="text-[10px] sm:text-xs font-bold text-zinc-400 uppercase tracking-widest flex-1 text-right">Trn: <span id="turns-t1-display">0</span></span>
                 <span id="score-t1-display" class="font-black text-lg px-2 rounded border">0</span>
                 <span id="label-t1" class="font-bold text-xs sm:text-sm uppercase tracking-widest drop-shadow-md flex-1">T1 Bench</span>
+                <button type="button" id="skip-t1" class="skip-turn-btn" onclick="requestSkip(false)" disabled title="Skip this turn. You cannot skip twice in a row.">Skip</button>
             </div>
         </div>
 
@@ -401,21 +470,31 @@
     };
 
     const AI_WEIGHTS = {
-        DEFENSE_THREAT_DIST: 5,
-        BASE_PROXIMITY_MULT: 2,
-        BLOCK_DIRECT_LANE: 15,
-        BLOCK_VERT_LANE: 8,
-        BLOCK_ADJ_LANE: 4,
-        OPP_INFLUENCE_MULT: 5,
-        ATTACK_PUSH_MULT: 2.5,
-        FORWARD_BONUS: 6,
-        MY_INFLUENCE_MULT: 2,
-        RECYCLE_NEAR_BALL: 20,
-        RECYCLE_BLOCKING: 15,
-        PASS_FORWARD_MULT: 5,
-        PASS_CENTER_PENALTY: 1.5,
-        PASS_SAFE_MY_INF: 3,
-        PASS_SAFE_OPP_INF: 4
+        OPEN_GOAL: 50,
+        KEEP_GOAL_THREAT: 18,
+        FORWARD_PROGRESS: 22,
+        FORWARD_OPTIONS: 7,
+        PASS_OPTIONS: 2,
+        STEAL_BALL: 28,
+        PRESS_BALL: 16,
+        CLAIM_LOOSE_BALL: 22,
+        STOP_OPP_GOAL: 45,
+        CUT_OPP_PROGRESS: 16,
+        CUT_OPP_OPTIONS: 4,
+        WIDE_ROUTE: 6,
+        AHEAD_OF_BALL: 5,
+        ADJACENT: 3,
+        FAR_PENALTY: 1.5,
+        CROWD_OWNED_BALL: 8,
+        SKIP_THRESHOLD: 1.5,
+        PASS_ROW_GAIN: 12,
+        PASS_GOAL_PROX: 1.6,
+        PASS_SAFETY: 3,
+        PASS_CONTESTED: 6,
+        PASS_ESCAPE: 2.5,
+        PASS_SWITCH: 8,
+        PASS_BACKWARD: 10,
+        HOLD_BASE: -4
     };
 
     let config = {
@@ -433,10 +512,11 @@
         lineupTokens: { t1: 2, t2: 2 },
         hands: { t1: MAX_TOKENS, t2: MAX_TOKENS },
         board: [],            
-        ball: null, 
+        ball: { r: 5, c: 3 }, 
         selectedToken: null,
         previewPasses: false,
         pending: null,
+        skipReady: { t1: true, t2: true },
         score: { t1: 0, t2: 0 },
         turnCount: 0, 
         teamTurns: { t1: 0, t2: 0 },
@@ -587,10 +667,11 @@
         state.phase = 'lineup';
         state.lineupTokens = { t1: 2, t2: 2 };
         state.hands = { t1: MAX_TOKENS, t2: MAX_TOKENS };
-        state.ball = null; 
+        state.ball = { r: 5, c: 3 }; 
         state.selectedToken = null;
         state.previewPasses = false;
         state.pending = null;
+        state.skipReady = { t1: true, t2: true };
         state.isCelebrating = false;
         state.aiClicking = false;
         state.isToastActive = false;
@@ -626,18 +707,28 @@
         }, duration);
     }
 
-    function getInfluence(r, c, player) {
+    function getInfluence(r, c, player, board = state.board) {
         let count = 0;
         for (let dr = -1; dr <= 1; dr++) {
             for (let dc = -1; dc <= 1; dc++) {
                 const nr = r + dr;
                 const nc = c + dc;
                 if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
-                    if (state.board[nr][nc] === player) count++;
+                    if (board[nr][nc] === player) count++;
                 }
             }
         }
         return count;
+    }
+
+    function squareStatus(r, c, team, board = state.board) {
+        const opponent = team === 't1' ? 't2' : 't1';
+        const myInf = getInfluence(r, c, team, board);
+        const oppInf = getInfluence(r, c, opponent, board);
+        if (myInf === oppInf && myInf > 0) return 'contested';
+        if (myInf > oppInf) return 'controlled';
+        if (oppInf > myInf) return 'opp_controlled';
+        return 'unclaimed';
     }
 
     function getSimulatedInfluence(r, c, player) {
@@ -663,25 +754,14 @@
         return count;
     }
 
-    function getValidPasses() {
-        if (!state.ball) return Array(ROWS).fill(false).map(() => Array(COLS).fill(false));
+    function getValidPasses(team = state.turn, ball = state.ball, board = state.board) {
+        if (!ball) return Array(ROWS).fill(false).map(() => Array(COLS).fill(false));
         
         const valid = Array(ROWS).fill(false).map(() => Array(COLS).fill(false));
-        const br = state.ball.r;
-        const bc = state.ball.c;
-        const opponent = state.turn === 't1' ? 't2' : 't1';
+        const br = ball.r;
+        const bc = ball.c;
         
-        function getSquareStatus(r, c) {
-            const myInf = getInfluence(r, c, state.turn);
-            const oppInf = getInfluence(r, c, opponent);
-            
-            if (myInf === oppInf && myInf > 0) return 'contested';
-            if (myInf > oppInf) return 'controlled';
-            if (oppInf > myInf) return 'opp_controlled';
-            return 'unclaimed'; 
-        }
-        
-        const originStatus = getSquareStatus(br, bc);
+        const originStatus = squareStatus(br, bc, team, board);
         
         if (originStatus === 'opp_controlled' || originStatus === 'unclaimed') {
             return valid; 
@@ -694,8 +774,8 @@
                     const nr = br + dr;
                     const nc = bc + dc;
                     if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
-                        const targetStatus = getSquareStatus(nr, nc);
-                        const isTargetGoal = isGoalCell(nr, nc, state.turn);
+                        const targetStatus = squareStatus(nr, nc, team, board);
+                        const isTargetGoal = isGoalCell(nr, nc, team);
                         
                         if (isTargetGoal || targetStatus === 'controlled' || targetStatus === 'contested') {
                             valid[nr][nc] = true;
@@ -724,8 +804,8 @@
                         if (!visited[nr][nc]) {
                             visited[nr][nc] = true; 
                             
-                            const targetStatus = getSquareStatus(nr, nc);
-                            const isTargetGoal = isGoalCell(nr, nc, state.turn);
+                            const targetStatus = squareStatus(nr, nc, team, board);
+                            const isTargetGoal = isGoalCell(nr, nc, team);
                             
                             if (isTargetGoal) {
                                 valid[nr][nc] = true; 
@@ -908,6 +988,45 @@
                 handEl.appendChild(dot);
             }
         });
+
+        updateSkipButton();
+    }
+
+    function canSkipTurn(fromAI = false) {
+        if (state.phase !== 'place_pressure') return false;
+        if (!state.skipReady[state.turn]) return false;
+        if (state.isCelebrating) return false;
+        if (!fromAI) {
+            if (state.isToastActive) return false;
+            if (config[state.turn].type === 'ai') return false;
+        }
+        return true;
+    }
+
+    function updateSkipButton() {
+        ['t1', 't2'].forEach(team => {
+            const btn = document.getElementById(`skip-${team}`);
+            if (!btn) return;
+            const isCurrent = state.turn === team && state.phase === 'place_pressure';
+            const ready = isCurrent && canSkipTurn(false);
+            btn.disabled = !ready;
+            btn.title = isCurrent && !state.skipReady[team]
+                ? 'You cannot skip two turns in a row'
+                : 'Skip this turn. You cannot skip twice in a row.';
+        });
+    }
+
+    function requestSkip(fromAI) {
+        const ai = fromAI === true;
+        if (!canSkipTurn(ai)) return;
+
+        state.skipReady[state.turn] = false;
+        state.pending = null;
+        state.selectedToken = null;
+        state.previewPasses = false;
+        render();
+        displayToast('TURN SKIPPED', config[state.turn].inner, TIMING.TOAST_SHORT, 'text-3xl sm:text-5xl');
+        setTimeout(() => endTurn(true), TIMING.TOAST_SHORT);
     }
 
     function handleCellClick(r, c) {
@@ -924,24 +1043,23 @@
                 state.lineupTokens[state.turn]--;
                 state.hands[state.turn]--;
                 
-                if (state.lineupTokens[state.turn] === 0) {
+                if (state.lineupTokens.t1 === 0 && state.lineupTokens.t2 === 0) {
+                    state.turn = state.kickoffTeam;
+                    state.phase = 'place_pressure';
+                    render();
+                    displayToast("KICK OFF", config[state.turn].inner, TIMING.TOAST_LONG, 'text-4xl sm:text-6xl');
+                    setTimeout(triggerAI, TIMING.TOAST_LONG);
+                } else {
                     const nextTurn = state.turn === 't1' ? 't2' : 't1';
-                    if (state.lineupTokens[nextTurn] === 0) {
-                        state.ball = { r: 5, c: 3 };
-                        state.turn = state.kickoffTeam;
-                        state.phase = 'place_pressure';
-                        render();
-                        displayToast("KICK OFF", config[state.turn].inner, TIMING.TOAST_LONG, 'text-4xl sm:text-6xl');
-                        setTimeout(triggerAI, TIMING.TOAST_LONG);
-                    } else {
+                    if (state.lineupTokens[nextTurn] > 0) {
                         state.turn = nextTurn;
                         render();
                         displayToast(`${config[state.turn].name.toUpperCase()}'S\nLINEUP`, config[state.turn].inner, TIMING.TOAST_SHORT, 'text-3xl sm:text-5xl');
                         triggerAI();
+                    } else {
+                        render();
+                        triggerAI();
                     }
-                } else {
-                    render();
-                    triggerAI();
                 }
                 return;
             }
@@ -983,7 +1101,8 @@
         state.pending = null;
 
         if (state.phase === 'lineup') {
-            if (state.board[r][c] === null) {
+            const onBall = state.ball && state.ball.r === r && state.ball.c === c;
+            if (state.board[r][c] === null && !onBall) {
                 const isValidHalf = state.turn === 't1' ? (r >= 6 && r <= 9) : (r >= 1 && r <= 4);
                 if (isValidHalf) {
                     state.pending = { r, c, type: 'place_token' };
@@ -1069,7 +1188,11 @@
         }
     }
 
-    function endTurn() {
+    function endTurn(fromSkip = false) {
+        if (!fromSkip) {
+            state.skipReady[state.turn] = true;
+        }
+
         state.turnCount++;
         state.teamTurns[state.turn]++;
         
@@ -1153,6 +1276,11 @@
             }, TIMING.AI_CLICK_DELAY);
         } else if (state.phase === 'place_pressure') {
             const action = calculateAIPressure();
+            if (!action) return;
+            if (action.type === 'skip') {
+                requestSkip(true);
+                return;
+            }
             state.pending = action;
             render(); 
             setTimeout(() => {
@@ -1184,148 +1312,254 @@
         const aiTeam = state.turn;
         let bestScore = -Infinity;
         let bestCell = null;
+        const alreadyPlaced = 2 - state.lineupTokens[aiTeam];
 
         const minR = aiTeam === 't1' ? 6 : 1;
         const maxR = aiTeam === 't1' ? 9 : 4;
         
         for (let r = minR; r <= maxR; r++) {
             for (let c = 0; c < COLS; c++) {
-                if (state.board[r][c] === null) {
-                    let score = 0;
-                    score += (3 - Math.abs(c - 3)) * 2; 
-                    const distToMid = Math.abs(r - 5);
-                    score += (5 - distToMid) * 2;
-                    score += aiJitter();
+                if (state.board[r][c] !== null) continue;
+                if (state.ball && state.ball.r === r && state.ball.c === c) continue;
 
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestCell = { r, c };
+                let score = 0;
+                const distToBall = Math.abs(r - state.ball.r) + Math.abs(c - state.ball.c);
+                score += (4 - Math.abs(c - 3)) * 1.5;
+                score += (5 - Math.abs(r - 5)) * 2;
+                if (distToBall === 1) score += 4;
+                if (distToBall === 2) score += 3;
+
+                if (alreadyPlaced === 1) {
+                    // Second token: shape a pocket, not a pile.
+                    score += Math.abs(c - 3) * 1.2;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            const nr = r + dr;
+                            const nc = c + dc;
+                            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && state.board[nr][nc] === aiTeam) {
+                                score += 5;
+                            }
+                        }
                     }
+                    if (distToBall === 1) score -= 2;
+                }
+
+                score += aiJitter();
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestCell = { r, c };
                 }
             }
         }
         return { r: bestCell.r, c: bestCell.c, type: 'place_token' };
     }
 
+    function cloneBoard() {
+        return state.board.map(row => row.slice());
+    }
+
+    function boardAfterPlace(r, c, team, fromToken) {
+        const board = cloneBoard();
+        if (fromToken) board[fromToken.r][fromToken.c] = null;
+        board[r][c] = team;
+        return board;
+    }
+
+    function countValid(valid) {
+        let n = 0;
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (valid[r][c]) n++;
+            }
+        }
+        return n;
+    }
+
+    function bestForwardRow(valid, team, ball) {
+        let best = ball.r;
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (!valid[r][c]) continue;
+                best = team === 't1' ? Math.min(best, r) : Math.max(best, r);
+            }
+        }
+        return best;
+    }
+
+    function forwardPassCount(valid, team, ball) {
+        let n = 0;
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (!valid[r][c]) continue;
+                if (team === 't1' && r < ball.r) n++;
+                if (team === 't2' && r > ball.r) n++;
+            }
+        }
+        return n;
+    }
+
+    function canReachGoal(valid, team) {
+        const r = team === 't1' ? 0 : ROWS - 1;
+        for (let c = 1; c <= 5; c++) {
+            if (valid[r][c]) return true;
+        }
+        return false;
+    }
+
+    function neighbourEscape(r, c, team, board) {
+        let n = 0;
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                if (dr === 0 && dc === 0) continue;
+                const nr = r + dr;
+                const nc = c + dc;
+                if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+                const status = squareStatus(nr, nc, team, board);
+                if (status === 'controlled' || isGoalCell(nr, nc, team)) n++;
+            }
+        }
+        return n;
+    }
+
+    function evaluatePlacement(r, c, team, fromToken) {
+        const opp = team === 't1' ? 't2' : 't1';
+        const board = boardAfterPlace(r, c, team, fromToken);
+        const myNow = getValidPasses(team, state.ball, state.board);
+        const myNext = getValidPasses(team, state.ball, board);
+        const oppNow = getValidPasses(opp, state.ball, state.board);
+        const oppNext = getValidPasses(opp, state.ball, board);
+        const sharp = aiSharp();
+        let score = 0;
+
+        if (canReachGoal(myNext, team) && !canReachGoal(myNow, team)) score += AI_WEIGHTS.OPEN_GOAL * sharp;
+        else if (canReachGoal(myNext, team)) score += AI_WEIGHTS.KEEP_GOAL_THREAT * sharp;
+
+        const oldFwd = bestForwardRow(myNow, team, state.ball);
+        const newFwd = bestForwardRow(myNext, team, state.ball);
+        const progress = team === 't1' ? (oldFwd - newFwd) : (newFwd - oldFwd);
+        score += progress * AI_WEIGHTS.FORWARD_PROGRESS * sharp;
+        score += (forwardPassCount(myNext, team, state.ball) - forwardPassCount(myNow, team, state.ball)) * AI_WEIGHTS.FORWARD_OPTIONS * sharp;
+        score += (countValid(myNext) - countValid(myNow)) * AI_WEIGHTS.PASS_OPTIONS * sharp;
+
+        const ballWas = squareStatus(state.ball.r, state.ball.c, team, state.board);
+        const ballNow = squareStatus(state.ball.r, state.ball.c, team, board);
+        if (ballWas !== 'controlled' && ballNow === 'controlled') score += AI_WEIGHTS.STEAL_BALL * sharp;
+        else if (ballWas === 'opp_controlled' && ballNow === 'contested') score += AI_WEIGHTS.PRESS_BALL * sharp;
+        else if (ballWas === 'unclaimed' && (ballNow === 'controlled' || ballNow === 'contested')) score += AI_WEIGHTS.CLAIM_LOOSE_BALL * sharp;
+
+        if (canReachGoal(oppNow, opp) && !canReachGoal(oppNext, opp)) score += AI_WEIGHTS.STOP_OPP_GOAL * sharp;
+        const oppOldFwd = bestForwardRow(oppNow, opp, state.ball);
+        const oppNewFwd = bestForwardRow(oppNext, opp, state.ball);
+        const oppLoss = opp === 't1' ? (oppNewFwd - oppOldFwd) : (oppOldFwd - oppNewFwd);
+        score += Math.max(0, oppLoss) * AI_WEIGHTS.CUT_OPP_PROGRESS * sharp;
+        score += Math.max(0, countValid(oppNow) - countValid(oppNext)) * AI_WEIGHTS.CUT_OPP_OPTIONS * sharp;
+
+        const aheadR = state.ball.r + (team === 't1' ? -1 : 1);
+        const centerLane = (aheadR >= 0 && aheadR < ROWS) ? squareStatus(aheadR, 3, team, state.board) : 'unclaimed';
+        if ((centerLane === 'opp_controlled' || centerLane === 'contested') && Math.abs(c - 3) >= 2) {
+            score += AI_WEIGHTS.WIDE_ROUTE * sharp;
+        }
+
+        const isForward = (team === 't1' && r < state.ball.r) || (team === 't2' && r > state.ball.r);
+        if (isForward) score += AI_WEIGHTS.AHEAD_OF_BALL * sharp;
+
+        const dist = Math.abs(r - state.ball.r) + Math.abs(c - state.ball.c);
+        if (dist === 1) score += AI_WEIGHTS.ADJACENT * sharp;
+        if (dist > 4) score -= (dist - 4) * AI_WEIGHTS.FAR_PENALTY * sharp;
+        if (ballWas === 'controlled' && dist <= 1) score -= AI_WEIGHTS.CROWD_OWNED_BALL * sharp;
+
+        score += aiJitter();
+        return score;
+    }
+
     function calculateAIPressure() {
         const aiTeam = state.turn;
-        const oppTeam = aiTeam === 't1' ? 't2' : 't1';
-        
-        const attackRow = aiTeam === 't1' ? 0 : ROWS - 1;
-        const defendRow = aiTeam === 't1' ? ROWS - 1 : 0;
-        
-        const ballDistToMyGoal = Math.abs(state.ball.r - defendRow);
-        const isUnderThreat = ballDistToMyGoal <= AI_WEIGHTS.DEFENSE_THREAT_DIST;
-
-        let bestScore = -Infinity;
-        let bestCell = null;
-
+        const destinations = [];
         for (let r = 1; r < ROWS - 1; r++) {
             for (let c = 0; c < COLS; c++) {
-                if (state.board[r][c] === null && !(r === state.ball.r && c === state.ball.c)) {
-                    let score = 0;
-                    
-                    const distToBall = Math.abs(r - state.ball.r) + Math.abs(c - state.ball.c);
-                    const distToDefend = Math.abs(r - defendRow);
-                    const distToAttack = Math.abs(r - attackRow);
-
-                    const sharp = aiSharp();
-                    score += (10 - distToBall) * AI_WEIGHTS.BASE_PROXIMITY_MULT * sharp;
-
-                    if (isUnderThreat) {
-                        const isBetweenBallAndGoal = (aiTeam === 't1' && r > state.ball.r) || (aiTeam === 't2' && r < state.ball.r);
-                        
-                        if (isBetweenBallAndGoal) {
-                            score += AI_WEIGHTS.BLOCK_DIRECT_LANE * sharp;
-                            if (c === state.ball.c) score += AI_WEIGHTS.BLOCK_VERT_LANE * sharp;
-                            if (Math.abs(c - state.ball.c) === 1) score += AI_WEIGHTS.BLOCK_ADJ_LANE * sharp;
-                        }
-                        
-                        const oppInfluenceHere = getInfluence(r, c, oppTeam);
-                        score += oppInfluenceHere * AI_WEIGHTS.OPP_INFLUENCE_MULT * sharp;
-                        
-                    } else {
-                        score += (10 - distToAttack) * AI_WEIGHTS.ATTACK_PUSH_MULT * sharp;
-                        
-                        const isForward = (aiTeam === 't1' && r < state.ball.r) || (aiTeam === 't2' && r > state.ball.r);
-                        if (isForward) score += AI_WEIGHTS.FORWARD_BONUS * sharp;
-                        
-                        const myInfluenceHere = getInfluence(r, c, aiTeam);
-                        score += myInfluenceHere * AI_WEIGHTS.MY_INFLUENCE_MULT * sharp;
-                    }
-
-                    score += aiJitter(); 
-
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestCell = { r, c };
-                    }
+                if (state.board[r][c] === null && !(state.ball.r === r && state.ball.c === c)) {
+                    destinations.push({ r, c });
                 }
             }
         }
+
+        let bestScore = -Infinity;
+        let bestAction = null;
 
         if (state.hands[aiTeam] > 0) {
-            return { r: bestCell.r, c: bestCell.c, type: 'place_token' };
+            for (const d of destinations) {
+                const score = evaluatePlacement(d.r, d.c, aiTeam, null);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestAction = { r: d.r, c: d.c, type: 'place_token' };
+                }
+            }
         } else {
-            let worstUsefulness = Infinity;
-            let pieceToMove = null;
-            
+            const pieces = [];
             for (let r = 1; r < ROWS - 1; r++) {
                 for (let c = 0; c < COLS; c++) {
-                    if (state.board[r][c] === aiTeam) {
-                        let usefulness = 0;
-                        const distToBall = Math.abs(r - state.ball.r) + Math.abs(c - state.ball.c);
-                        
-                        if (distToBall <= 2) usefulness += AI_WEIGHTS.RECYCLE_NEAR_BALL;
-                        
-                        const isBetweenBallAndGoal = (aiTeam === 't1' && r > state.ball.r) || (aiTeam === 't2' && r < state.ball.r);
-                        if (isUnderThreat && isBetweenBallAndGoal) usefulness += AI_WEIGHTS.RECYCLE_BLOCKING;
-
-                        usefulness -= distToBall;
-
-                        if (usefulness < worstUsefulness) {
-                            worstUsefulness = usefulness;
-                            pieceToMove = { r, c };
-                        }
+                    if (state.board[r][c] === aiTeam) pieces.push({ r, c });
+                }
+            }
+            for (const piece of pieces) {
+                for (const d of destinations) {
+                    const score = evaluatePlacement(d.r, d.c, aiTeam, piece);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestAction = { r: d.r, c: d.c, type: 'move_token', from: piece };
                     }
                 }
             }
-            state.selectedToken = pieceToMove; 
-            return { r: bestCell.r, c: bestCell.c, type: 'move_token' };
+            if (bestAction) state.selectedToken = bestAction.from;
         }
+
+        if (state.skipReady[aiTeam] && (bestAction === null || bestScore < AI_WEIGHTS.SKIP_THRESHOLD)) {
+            return { type: 'skip' };
+        }
+        if (!bestAction && destinations.length) {
+            bestAction = { r: destinations[0].r, c: destinations[0].c, type: 'place_token' };
+        }
+        return bestAction;
     }
 
     function calculateAIPass() {
         const aiTeam = state.turn;
         const oppTeam = aiTeam === 't1' ? 't2' : 't1';
-        const targetRow = aiTeam === 't1' ? 0 : ROWS - 1;
         const validPasses = getValidPasses();
-        
-        let bestScore = -Infinity;
+        const sharp = aiSharp();
+        const ballColPressure = getInfluence(state.ball.r, state.ball.c, oppTeam);
+
+        let bestScore = AI_WEIGHTS.HOLD_BASE;
+        const holdStatus = squareStatus(state.ball.r, state.ball.c, aiTeam);
+        if (holdStatus === 'controlled') bestScore += 2;
+        if (holdStatus === 'contested') bestScore -= 8;
+        bestScore += aiJitter();
         let bestPass = { r: state.ball.r, c: state.ball.c, type: 'hold_ball' };
 
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
-                if (validPasses[r][c]) {
-                    
-                    if (isGoalCell(r, c, aiTeam)) return { r, c, type: 'pass_ball' };
+                if (!validPasses[r][c]) continue;
+                if (isGoalCell(r, c, aiTeam)) return { r, c, type: 'pass_ball' };
 
-                    let score = 0;
-                    
-                    const sharp = aiSharp();
-                    score += (10 - Math.abs(r - targetRow)) * AI_WEIGHTS.PASS_FORWARD_MULT * sharp;
-                    score -= Math.abs(c - 3) * AI_WEIGHTS.PASS_CENTER_PENALTY * sharp;
-                    
-                    const myInf = getInfluence(r, c, aiTeam);
-                    const oppInf = getInfluence(r, c, oppTeam);
-                    score += ((myInf * AI_WEIGHTS.PASS_SAFE_MY_INF) - (oppInf * AI_WEIGHTS.PASS_SAFE_OPP_INF)) * sharp;
+                let score = 0;
+                const rowsGained = aiTeam === 't1' ? (state.ball.r - r) : (r - state.ball.r);
+                score += rowsGained * AI_WEIGHTS.PASS_ROW_GAIN * sharp;
+                score += (aiTeam === 't1' ? (ROWS - 1 - r) : r) * AI_WEIGHTS.PASS_GOAL_PROX * sharp;
 
-                    score += aiJitter();
+                const myInf = getInfluence(r, c, aiTeam);
+                const oppInf = getInfluence(r, c, oppTeam);
+                score += (myInf - oppInf * 1.4) * AI_WEIGHTS.PASS_SAFETY * sharp;
+                if (squareStatus(r, c, aiTeam) === 'contested') score -= AI_WEIGHTS.PASS_CONTESTED * sharp;
+                score += neighbourEscape(r, c, aiTeam, state.board) * AI_WEIGHTS.PASS_ESCAPE * sharp;
 
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestPass = { r, c, type: 'pass_ball' };
-                    }
+                if (Math.abs(c - state.ball.c) >= 2 && ballColPressure >= 2) score += AI_WEIGHTS.PASS_SWITCH * sharp;
+                if (rowsGained < 0) score -= AI_WEIGHTS.PASS_BACKWARD * sharp;
+                if (c === 0 || c === COLS - 1) score -= 1.5 * sharp;
+
+                score += aiJitter();
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestPass = { r, c, type: 'pass_ball' };
                 }
             }
         }
