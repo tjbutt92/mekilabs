@@ -63,5 +63,57 @@
     "webStatus": "In Development",
     "androidUrl": "",
     "androidStatus": ""
+  },
+  {
+    "id": "hex-links",
+    "title": "Hex Links",
+    "description": "One shot. Closest to the pin wins. Pick your club, shape your shot, and outsmart the wind on a hex-grid golf course.",
+    "tags": ["Golf", "Strategy", "Multiplayer"],
+    "platforms": ["web"],
+    "banner": "icons/hex-links-banner.png",
+    "icon": "icons/hex-links-icon.png",
+    "webUrl": "hex-links.html",
+    "webStatus": "Beta",
+    "androidUrl": "",
+    "androidStatus": ""
+  },
+  {
+    "id": "o-race",
+    "title": "⬡-Race",
+    "description": "Tactical hex racing. Lay mountains, carve forest paths, and outwit your opponent across a procedurally generated course.",
+    "tags": ["Racing", "Strategy", "Hex"],
+    "platforms": ["web"],
+    "banner": "icons/o-race-banner.png",
+    "icon": "icons/o-race-icon.png",
+    "webUrl": "o-race.html",
+    "webStatus": "Beta",
+    "androidUrl": "",
+    "androidStatus": ""
+  },
+  {
+    "id": "slipstream",
+    "title": "Slipstream",
+    "description": "Velodrome board game for 2–4 teams. Draft in your teammate's slipstream, manage your energy, and time your sprint to the finish.",
+    "tags": ["Cycling", "Board Game", "Multiplayer"],
+    "platforms": ["web"],
+    "banner": "icons/slipstream-banner.png",
+    "icon": "icons/slipstream-icon.png",
+    "webUrl": "slipstream.html",
+    "webStatus": "Beta",
+    "androidUrl": "",
+    "androidStatus": ""
+  },
+  {
+    "id": "the-press",
+    "title": "The Press",
+    "description": "Tactical area control on a 7×11 pitch. Place tokens, dominate zones, and press the ball into the net before your opponent does.",
+    "tags": ["Football", "Strategy", "Area Control"],
+    "platforms": ["web"],
+    "banner": "icons/the-press-banner.png",
+    "icon": "icons/the-press-icon.png",
+    "webUrl": "the-press.html",
+    "webStatus": "Beta",
+    "androidUrl": "",
+    "androidStatus": ""
   }
 ]

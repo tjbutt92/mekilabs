@@ -2,6 +2,9 @@
 .DS_Store
 Thumbs.db
 
+# Local installers
+CursorUserSetup*.exe
+
 # Editor
 .idea/
 *.swp
@@ -13,6 +16,9 @@ Thumbs.db
 # Local dev
 .wrangler/
 node_modules/
+
+# Tailwind build sources (output tailwind.min.css is committed)
+tailwind.input.css
 
 .vscode
 

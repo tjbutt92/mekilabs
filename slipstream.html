@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Slipstream | Meki Labs</title>
+  <meta name="description" content="Velodrome board game for 2–4 teams. Draft in your teammate's slipstream, manage your energy, and time your sprint to the finish.">
+  <meta property="og:title" content="Slipstream | Meki Labs">
+  <meta property="og:description" content="Velodrome board game for 2–4 teams. Draft in your teammate's slipstream, manage your energy, and time your sprint to the finish.">
+  <meta property="og:image" content="https://mekilabs.com/icons/slipstream-banner.png">
+  <meta property="og:url" content="https://mekilabs.com/slipstream.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/icons/slipstream-icon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700&family=Teko:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0; padding: 0; 
+      background-color: #0f172a; 
+      display: flex; justify-content: center; align-items: center;
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      font-family: Outfit, system-ui, sans-serif;
+      touch-action: none; 
+    }
+
+    #app-container {
+      width: 100vw; height: 100vh;
+      position: relative;
+      background: #0f172a; 
+    }
+
+    canvas { display: block; width: 100%; height: 100%; }
+
+    /* --- TOP BAR / STATUS BANNER --- */
+    #top-bar {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: none; height: 76px; z-index: 10;
+      pointer-events: none;
+    }
+
+    #turn-banner {
+      position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+      font-family: Teko, sans-serif; font-weight: 600; font-size: 2rem; line-height: 1;
+      letter-spacing: 0.06em;
+      text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      color: white; pointer-events: none; white-space: nowrap;
+    }
+
+    #btn-quit {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8; cursor: pointer; transition: all 0.2s ease;
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 300; pointer-events: auto;
+    }
+    #btn-quit:hover { color: #ef4444; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.1); }
+    #btn-quit:active { transform: scale(0.95); }
+
+    /* --- IN GAME CONTROLS --- */
+    #controls {
+      position: absolute; bottom: 40px; left: 0; right: 0;
+      display: flex; justify-content: center; gap: 15px;
+      pointer-events: auto; z-index: 10;
+    }
+
+    button.game-btn {
+      padding: 10px 22px; font-family: Teko, sans-serif; font-size: 1.45rem; font-weight: 600;
+      letter-spacing: 0.04em; line-height: 1;
+      color: white; border: none; border-radius: 12px;
+      cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: 0.2s; display: none; 
+    }
+    #btn-exert { background-color: #f59e0b; }
+    #btn-exert:active { background-color: #d97706; transform: translateY(2px); }
+    #btn-rest { background-color: #10b981; }
+    #btn-rest:active { background-color: #059669; transform: translateY(2px); }
+    #btn-cancel { background-color: #64748b; }
+    #btn-cancel:active { background-color: #475569; transform: translateY(2px); }
+
+    /* --- MAIN LANDING SCREEN --- */
+    #landing-screen {
+      position: absolute; inset: 0;
+      background: #0f172a; 
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      z-index: 100; padding: 24px; text-align: center; color: white; overflow-y: auto;
+    }
+
+    .menu-card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px; padding: 28px 28px 24px;
+      max-width: 560px; width: 100%;
+      box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.55);
+    }
+
+    .eyebrow {
+      margin: 0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.28em;
+      text-transform: uppercase; color: #94a3b8;
+    }
+
+    h1 {
+      font-family: Teko, sans-serif; font-size: 5.4rem; font-weight: 600; line-height: 0.82;
+      margin: 2px 0 0; color: #f8fafc; letter-spacing: 0.02em; text-transform: uppercase;
+    }
+
+    .lede {
+      margin: 10px 0 0; color: #cbd5e1; font-size: 1rem; line-height: 1.4;
+    }
+
+    .lane-bar {
+      display: grid; grid-template-columns: 1.15fr 0.7fr 1fr; height: 8px;
+      border-radius: 999px; overflow: hidden; margin: 18px 0 18px;
+    }
+    .lane-bar i:nth-child(1) { background: #3b82f6; }
+    .lane-bar i:nth-child(2) { background: #64748b; }
+    .lane-bar i:nth-child(3) { background: #ef4444; }
+
+    .team-slots {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+    }
+
+    .team-slot {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px; padding: 12px 12px 12px 14px;
+      border-left: 4px solid;
+    }
+
+    .team-name {
+      font-family: Teko, sans-serif; font-weight: 600; font-size: 1.55rem; letter-spacing: 0.04em;
+      text-transform: uppercase; line-height: 1;
+    }
+
+    select.slot-ctrl {
+      background: #0f172a; color: #f1f5f9; font-family: inherit;
+      border: 1px solid #334155; padding: 8px 10px;
+      border-radius: 6px; font-weight: 600; font-size: 0.9rem;
+      cursor: pointer; outline: none;
+    }
+    select.slot-ctrl:focus { border-color: #3b82f6; }
+
+    .rules {
+      text-align: left; color: #cbd5e1; background: #0f172a;
+      border: 1px solid #334155; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+    }
+    .rules summary { cursor: pointer; font-weight: 700; letter-spacing: 0.04em; }
+    .rules p { margin: 10px 0 0; line-height: 1.45; font-size: 0.95rem; }
+
+    .mode-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      text-align: left; cursor: pointer;
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+    }
+    .mode-name {
+      display: block; font-family: Teko, sans-serif; font-weight: 600; font-size: 1.45rem;
+      letter-spacing: 0.04em; text-transform: uppercase; line-height: 1; color: #f8fafc;
+    }
+    .mode-hint {
+      display: block; margin-top: 4px; color: #94a3b8; font-size: 0.85rem; line-height: 1.35;
+    }
+    .mode-row input {
+      position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden;
+    }
+    .switch {
+      flex: 0 0 auto; width: 46px; height: 26px; border-radius: 999px;
+      background: #334155; position: relative; transition: background 0.2s ease;
+    }
+    .switch::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 20px; height: 20px; border-radius: 50%; background: #f8fafc;
+      transition: transform 0.2s ease;
+    }
+    .mode-row input:checked + .switch { background: #10b981; }
+    .mode-row input:checked + .switch::after { transform: translateX(20px); }
+    .mode-row input:focus-visible + .switch { outline: 2px solid #3b82f6; outline-offset: 2px; }
+    
+    #setup-error {
+      color: #ef4444; margin-bottom: 12px; display: none; font-weight: bold;
+    }
+
+    #btn-start-game {
+      width: 100%; padding: 12px 18px 10px; font-family: Teko, sans-serif;
+      font-size: 2rem; font-weight: 600; line-height: 1;
+      background: #ef4444; color: white; border: none; border-radius: 10px; 
+      text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; 
+      transition: background 0.2s ease; 
+    }
+
+    @media (max-width: 520px) {
+      h1 { font-size: 4.2rem; }
+      .team-slots { grid-template-columns: 1fr; }
+      .menu-card { padding: 22px 16px 18px; }
+    }
+    #btn-start-game:hover { background: #dc2626; }
+    #btn-start-game:active { transform: translateY(2px); }
+
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+    <div id="landing-screen">
+      <div class="menu-card">
+        <p class="eyebrow">Meki Labs</p>
+        <h1>Slipstream</h1>
+        <p class="lede">Two riders a team. The furthest ahead rides first. Riders who are level go red lane, then black, then blue.</p>
+        <div class="lane-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+
+        <div class="team-slots">
+          <div class="team-slot" style="border-left-color: #ef4444;">
+            <span class="team-name" style="color: #ef4444;">Red</span>
+            <select id="ctrl-red" class="slot-ctrl">
+              <option value="Human" selected>Player</option>
+              <option value="AI">Bot</option>
+              <option value="None">None</option>
+            </select>
+          </div>
+          <div class="team-slot" style="border-left-color: #3b82f6;">
+            <span class="team-name" style="color: #3b82f6;">Blue</span>
+            <select id="ctrl-blue" class="slot-ctrl">
+              <option value="Human">Player</option>
+              <option value="AI" selected>Bot</option>
+              <option value="None">None</option>
+            </select>
+          </div>
+          <div class="team-slot" style="border-left-color: #10b981;">
+            <span class="team-name" style="color: #10b981;">Green</span>
+            <select id="ctrl-green" class="slot-ctrl">
+              <option value="Human">Player</option>
+              <option value="AI" selected>Bot</option>
+              <option value="None">None</option>
+            </select>
+          </div>
+          <div class="team-slot" style="border-left-color: #f97316;">
+            <span class="team-name" style="color: #f97316;">Orange</span>
+            <select id="ctrl-orange" class="slot-ctrl">
+              <option value="Human">Player</option>
+              <option value="AI" selected>Bot</option>
+              <option value="None">None</option>
+            </select>
+          </div>
+        </div>
+        
+        <label class="mode-row">
+          <span>
+            <span class="mode-name">All Slipstream</span>
+            <span class="mode-hint">An unbroken line all get pulled, not only a teammate.</span>
+          </span>
+          <input type="checkbox" id="opt-all-slipstream">
+          <span class="switch" aria-hidden="true"></span>
+        </label>
+
+        <details class="rules">
+          <summary>How to play</summary>
+          <p>Pick at least two teams. Each team places two riders, one at a time, when the banner shows that colour. The rider furthest ahead moves first. When riders are level, the red lane goes before black, and black before blue. That order continues back through the field. Tap a lit space to move forward or change lane.</p>
+          <p>Exert spends 1 energy to move twice. Rest gains 1 energy, up to 3. A teammate directly behind is pulled into the space you leave. With All Slipstream on, everyone in that line is pulled too, until the first gap. The draft is free and does not replace their turn. After lap 1, a rider left a full lap down is out. The last rider's team wins.</p>
+        </details>
+        <div id="setup-error"></div>
+        <button id="btn-start-game" onclick="initAndStart()">Start Race</button>
+      </div>
+    </div>
+
+    <div id="top-bar">
+      <div id="turn-banner"></div>
+      <button id="btn-quit" onclick="showMenu()">&times;</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="controls">
+      <button id="btn-exert" class="game-btn" onclick="startExert()">Exert (1 Energy)</button>
+      <button id="btn-rest" class="game-btn" onclick="restActiveCyclist()">Rest (+1 Energy)</button>
+      <button id="btn-cancel" class="game-btn" onclick="cancelSelection()">Cancel Exert</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const bgCanvas = document.createElement('canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    
+    const btnExert = document.getElementById('btn-exert');
+    const btnRest = document.getElementById('btn-rest');
+    const btnCancel = document.getElementById('btn-cancel');
+    const landingScreen = document.getElementById('landing-screen');
+    const topBar = document.getElementById('top-bar');
+    const turnBanner = document.getElementById('turn-banner');
+    const setupError = document.getElementById('setup-error');
+
+    const logicalWidth = 400; const logicalHeight = 600;
+    const cx = logicalWidth / 2; const cyTop = 150; const cyBot = 450;
+    const L = { R: 50, Bk: 80, Bl: 110 }; 
+
+    let layout = { scale: 1, offsetX: 0, offsetY: 0, dpr: 1, landscape: false };
+
+    // --------------------------------------------------------
+    // 0. UNIFIED STATE MACHINE 
+    // --------------------------------------------------------
+    const ExertPhase = {
+      IDLE: 0,
+      SELECTING_TARGET_1: 1,
+      ANIMATING_STEP_1: 2,
+      SELECTING_TARGET_2: 3,
+      ANIMATING_STEP_2: 4,
+      AUTO_ROUTING: 5
+    };
+
+    const GameStore = {
+      status: 'SETUP', 
+      activeCyclist: null,
+      validMoves: [],
+      turnQueue: [],
+      animations: [],
+      exert: { active: false, phase: ExertPhase.IDLE }
+    };
+
+    let teamControllers = {};
+    let teamsOrder = [];
+    let currentTeamIndex = 0; 
+    let cyclists = [];
+    let allSlipstream = false;
+
+    const startingGrid = ['Bl1', 'Bk1', 'R1', 'Bl0', 'Bk0', 'R0', 'Bl9', 'Bk7', 'R5']; 
+
+    const TEAM_COLORS = { 'Red': '#ef4444', 'Blue': '#3b82f6', 'Green': '#10b981', 'Orange': '#f97316' };
+    const TEAM_IDS = { 'Red': ['R1', 'R2'], 'Blue': ['B1', 'B2'], 'Green': ['G1', 'G2'], 'Orange': ['O1', 'O2'] };
+
+    let isAnimating = false;
+    let animationStartTime = 0;
+    let animationProgress = 0;
+    let aiTimeout = null;
+
+    // --------------------------------------------------------
+    // 1. THE BOARD GRAPH 
+    // --------------------------------------------------------
+    const nodesData = {
+      Bl0: { x: cx + L.Bl, y: cyBot - 30, lane: 'Blue' },  Bk0: { x: cx + L.Bk, y: cyBot - 30, lane: 'Black' }, R0: { x: cx + L.R,  y: cyBot - 30, lane: 'Red' },  
+      Bl1: { x: cx + L.Bl, y: cyBot - 110, lane: 'Blue' }, Bk1: { x: cx + L.Bk, y: cyBot - 110, lane: 'Black' }, R1: { x: cx + L.R,  y: cyBot - 110, lane: 'Red' }, 
+      Bl1b: { x: cx + L.Bl, y: cyBot - 190, lane: 'Blue' }, Bk1b: { x: cx + L.Bk, y: cyBot - 190, lane: 'Black' }, R1b: { x: cx + L.R,  y: cyBot - 190, lane: 'Red' }, 
+      Bl1c: { x: cx + L.Bl, y: cyBot - 270, lane: 'Blue' }, Bk1c: { x: cx + L.Bk, y: cyBot - 270, lane: 'Black' }, R1c: { x: cx + L.R,  y: cyBot - 270, lane: 'Red' }, 
+      
+      Bl2: { x: cx + L.Bl * Math.cos(-Math.PI/4), y: cyTop + L.Bl * Math.sin(-Math.PI/4), lane: 'Blue' },
+      Bk2: { x: cx + L.Bk * Math.cos(-Math.PI/3), y: cyTop + L.Bk * Math.sin(-Math.PI/3), lane: 'Black' },
+      R2:  { x: cx + L.R  * Math.cos(-Math.PI/2), y: cyTop + L.R  * Math.sin(-Math.PI/2), lane: 'Red' },
+      Bl3: { x: cx + L.Bl * Math.cos(-Math.PI/2), y: cyTop + L.Bl * Math.sin(-Math.PI/2), lane: 'Blue' },
+      Bk3: { x: cx + L.Bk * Math.cos(-Math.PI*2/3), y: cyTop + L.Bk * Math.sin(-Math.PI*2/3), lane: 'Black' },
+      Bl4: { x: cx + L.Bl * Math.cos(-Math.PI*3/4), y: cyTop + L.Bl * Math.sin(-Math.PI*3/4), lane: 'Blue' },
+
+      Bl5: { x: cx - L.Bl, y: cyTop + 30, lane: 'Blue' },  Bk4: { x: cx - L.Bk, y: cyTop + 30, lane: 'Black' }, R3: { x: cx - L.R,  y: cyTop + 30, lane: 'Red' },  
+      Bl5b: { x: cx - L.Bl, y: cyTop + 110, lane: 'Blue' }, Bk4b: { x: cx - L.Bk, y: cyTop + 110, lane: 'Black' }, R3b: { x: cx - L.R,  y: cyTop + 110, lane: 'Red' }, 
+      Bl5c: { x: cx - L.Bl, y: cyTop + 190, lane: 'Blue' }, Bk4c: { x: cx - L.Bk, y: cyTop + 190, lane: 'Black' }, R3c: { x: cx - L.R,  y: cyTop + 190, lane: 'Red' }, 
+      Bl6: { x: cx - L.Bl, y: cyTop + 270, lane: 'Blue' }, Bk5: { x: cx - L.Bk, y: cyTop + 270, lane: 'Black' }, R4: { x: cx - L.R,  y: cyTop + 270, lane: 'Red' }, 
+
+      Bl7: { x: cx + L.Bl * Math.cos(Math.PI - Math.PI/4), y: cyBot + L.Bl * Math.sin(Math.PI - Math.PI/4), lane: 'Blue' },
+      Bk6: { x: cx + L.Bk * Math.cos(Math.PI - Math.PI/3), y: cyBot + L.Bk * Math.sin(Math.PI - Math.PI/3), lane: 'Black' },
+      R5:  { x: cx + L.R  * Math.cos(Math.PI - Math.PI/2), y: cyBot + L.R  * Math.sin(Math.PI - Math.PI/2), lane: 'Red' },
+      Bl8: { x: cx + L.Bl * Math.cos(Math.PI - Math.PI/2), y: cyBot + L.Bl * Math.sin(Math.PI - Math.PI/2), lane: 'Blue' },
+      Bk7: { x: cx + L.Bk * Math.cos(Math.PI - Math.PI*2/3), y: cyBot + L.Bk * Math.sin(Math.PI - Math.PI*2/3), lane: 'Black' },
+      Bl9: { x: cx + L.Bl * Math.cos(Math.PI - Math.PI*3/4), y: cyBot + L.Bl * Math.sin(Math.PI - Math.PI*3/4), lane: 'Blue' },
+    };
+
+    const trackGraph = {
+      'Bl0': { next: 'Bl1', in: ['Bk0', 'Bk1'] }, 
+      'Bk0': { next: 'Bk1', in: ['R0', 'R1'], out: ['Bl0', 'Bl1'] }, 
+      'R0': { next: 'R1', out: ['Bk0', 'Bk1'] },
+      'Bl1': { next: 'Bl1b', in: ['Bk1', 'Bk1b'] }, 
+      'Bk1': { next: 'Bk1b', in: ['R1', 'R1b'], out: ['Bl1', 'Bl1b'] }, 
+      'R1': { next: 'R1b', out: ['Bk1', 'Bk1b'] },
+      'Bl1b': { next: 'Bl1c', in: ['Bk1b', 'Bk1c'] }, 
+      'Bk1b': { next: 'Bk1c', in: ['R1b', 'R1c'], out: ['Bl1b', 'Bl1c'] }, 
+      'R1b': { next: 'R1c', out: ['Bk1b', 'Bk1c'] },
+      'Bl1c': { next: 'Bl2', in: ['Bk1c', 'Bk2'] }, 
+      'Bk1c': { next: 'Bk2', in: ['R1c', 'R2'], out: ['Bl1c', 'Bl2'] }, 
+      'R1c': { next: 'R2', out: ['Bk1c', 'Bk2'] },
+      'Bl2': { next: 'Bl3', in: ['Bk2'] }, 
+      'Bk2': { next: 'Bk3', in: ['R2'], out: ['Bl3'] }, 
+      'R2':  { next: 'R3', out: ['Bk4'] },               
+      'Bl3': { next: 'Bl4', in: ['Bk3'] }, 
+      'Bk3': { next: 'Bk4', in: ['R3'], out: ['Bl5'] },   
+      'Bl4': { next: 'Bl5', in: ['Bk4'] },               
+      'Bl5': { next: 'Bl5b', in: ['Bk4', 'Bk4b'] }, 
+      'Bk4': { next: 'Bk4b', in: ['R3', 'R3b'], out: ['Bl5', 'Bl5b'] }, 
+      'R3': { next: 'R3b', out: ['Bk4', 'Bk4b'] },
+      'Bl5b': { next: 'Bl5c', in: ['Bk4b', 'Bk4c'] }, 
+      'Bk4b': { next: 'Bk4c', in: ['R3b', 'R3c'], out: ['Bl5b', 'Bl5c'] }, 
+      'R3b': { next: 'R3c', out: ['Bk4b', 'Bk4c'] },
+      'Bl5c': { next: 'Bl6', in: ['Bk4c', 'Bk5'] }, 
+      'Bk4c': { next: 'Bk5', in: ['R3c', 'R4'], out: ['Bl5c', 'Bl6'] }, 
+      'R3c': { next: 'R4', out: ['Bk4c', 'Bk5'] },
+      'Bl6': { next: 'Bl7', in: ['Bk5', 'Bk6'] }, 
+      'Bk5': { next: 'Bk6', in: ['R4', 'R5'], out: ['Bl6', 'Bl7'] }, 
+      'R4': { next: 'R5', out: ['Bk5', 'Bk6'] },
+      'Bl7': { next: 'Bl8', in: ['Bk6'] }, 
+      'Bk6': { next: 'Bk7', in: ['R5'], out: ['Bl8'] }, 
+      'R5':  { next: 'R0', out: ['Bk0'] },               
+      'Bl8': { next: 'Bl9', in: ['Bk7'] }, 
+      'Bk7': { next: 'Bk0', in: ['R0'], out: ['Bl0'] },   
+      'Bl9': { next: 'Bl0', in: ['Bk0'] }                
+    };
+
+    const nodeProgress = {
+      'R1b': 1, 'Bk1b': 1, 'Bl1b': 1,
+      'R1c': 2, 'Bk1c': 2, 'Bl1c': 2,
+      'R2': 3, 'Bk2': 3, 'Bl2': 3,
+      'Bk3': 4, 'Bl3': 4,
+      'Bl4': 5,
+      'R3': 6, 'Bk4': 6, 'Bl5': 6,
+      'R3b': 7, 'Bk4b': 7, 'Bl5b': 7,
+      'R3c': 8, 'Bk4c': 8, 'Bl5c': 8,
+      'R4': 9, 'Bk5': 9, 'Bl6': 9,
+      'R5': 10, 'Bk6': 10, 'Bl7': 10,
+      'Bk7': 11, 'Bl8': 11,
+      'Bl9': 12,
+      'R0': 13, 'Bk0': 13, 'Bl0': 13,
+      'R1': 14, 'Bk1': 14, 'Bl1': 14
+    };
+
+    function validateTrackGraph() {
+      if (typeof DEBUG === 'undefined' || !DEBUG) return;
+      let errors = [];
+      for (let nodeId in trackGraph) {
+        let node = trackGraph[nodeId];
+        if (!node.next || !trackGraph[node.next]) errors.push(`Node ${nodeId} missing valid 'next'`);
+        if (node.in) {
+          node.in.forEach(inId => {
+            if (!trackGraph[inId]?.out?.includes(nodeId)) {
+               errors.push(`Mismatched edge: ${nodeId} expects 'in' from ${inId}`);
+            }
+          });
+        }
+      }
+      if (errors.length > 0) console.error("Track Graph Validation Failed:", errors);
+    }
+    validateTrackGraph(); 
+
+    function getLaneAdvantage(nodeId) {
+      if (!nodeId || !nodesData[nodeId]) return 0;
+      const lane = nodesData[nodeId].lane;
+      if (lane === 'Red') return 0.03;   
+      if (lane === 'Black') return 0.02; 
+      return 0.01;
+    }
+
+    // --------------------------------------------------------
+    // 3. SELECTION & MENU SYSTEMS
+    // --------------------------------------------------------
+    function showMenu() {
+      if (aiTimeout) clearTimeout(aiTimeout);
+      GameStore.status = 'SETUP';
+      landingScreen.style.display = 'flex';
+      topBar.style.display = 'none';
+      btnExert.style.display = 'none';
+      btnRest.style.display = 'none';
+      btnCancel.style.display = 'none';
+      setupError.style.display = 'none';
+      
+      GameStore.activeCyclist = null;
+      GameStore.validMoves = [];
+      GameStore.animations = [];
+      GameStore.turnQueue = [];
+      GameStore.exert = { active: false, phase: ExertPhase.IDLE };
+    }
+
+    function initAndStart() {
+      if (aiTimeout) clearTimeout(aiTimeout);
+      setupError.style.display = 'none';
+      
+      let cRed = document.getElementById('ctrl-red').value;
+      let cBlue = document.getElementById('ctrl-blue').value;
+      let cGreen = document.getElementById('ctrl-green').value;
+      let cOrange = document.getElementById('ctrl-orange').value;
+
+      teamControllers = {};
+      if (cRed !== 'None') teamControllers['Red'] = cRed;
+      if (cBlue !== 'None') teamControllers['Blue'] = cBlue;
+      if (cGreen !== 'None') teamControllers['Green'] = cGreen;
+      if (cOrange !== 'None') teamControllers['Orange'] = cOrange;
+
+      teamsOrder = Object.keys(teamControllers);
+
+      if (teamsOrder.length < 2) {
+          setupError.textContent = "Please select at least 2 teams to race!";
+          setupError.style.display = 'block';
+          return;
+      }
+
+      allSlipstream = document.getElementById('opt-all-slipstream').checked;
+
+      cyclists = [];
+      teamsOrder.forEach(team => {
+          cyclists.push({ id: TEAM_IDS[team][0], team: team, color: TEAM_COLORS[team], node: null, energy: 3, eliminated: false, laps: 0 });
+          cyclists.push({ id: TEAM_IDS[team][1], team: team, color: TEAM_COLORS[team], node: null, energy: 3, eliminated: false, laps: 0 });
+      });
+
+      currentTeamIndex = 0;
+      GameStore.status = 'SETUP';
+
+      landingScreen.style.display = 'none';
+      topBar.style.display = 'block';
+
+      resizeAndDraw();
+      checkAISetup();
+    }
+
+    // --------------------------------------------------------
+    // 4. CORE ENGINE & RANKING
+    // --------------------------------------------------------
+    function laneOrder(nodeId) {
+      const lane = nodeId && nodesData[nodeId] && nodesData[nodeId].lane;
+      if (lane === 'Red') return 0;
+      if (lane === 'Black') return 1;
+      return 2;
+    }
+
+    function getRankedCyclists(vCyclists) {
+      let active = vCyclists.filter(c => !c.eliminated);
+      active.sort((a, b) => {
+        if (b.laps !== a.laps) return b.laps - a.laps;
+        const progA = nodeProgress[a.node] || 0;
+        const progB = nodeProgress[b.node] || 0;
+        if (progB !== progA) return progB - progA;
+        return laneOrder(a.node) - laneOrder(b.node);
+      });
+      return active;
+    }
+
+    function startNextTurn() {
+        let ranked = getRankedCyclists(cyclists);
+        if (ranked.length <= 1) {
+            GameStore.status = 'GAMEOVER';
+            draw();
+            return;
+        }
+
+        if (GameStore.turnQueue.length === 0) {
+            GameStore.turnQueue = getRankedCyclists(cyclists);
+        }
+
+        GameStore.activeCyclist = GameStore.turnQueue.shift();
+        GameStore.exert = { active: false, phase: ExertPhase.IDLE };
+        
+        updateValidMoves();
+
+        if (GameStore.validMoves.length === 0 && teamControllers[GameStore.activeCyclist.team] !== 'Human') {
+            restActiveCyclist();
+            return;
+        }
+
+        draw();
+        checkAITurn();
+    }
+
+    // Riders stacked with no gap behind the square just left, nearest first.
+    // Classic mode stops at the first rider who is not a teammate.
+    // All Slipstream keeps going until the line breaks.
+    function slipstreamChain(cyclistArray, movingCyclistId, oldNode) {
+      const movingCyclist = cyclistArray.find(c => c.id === movingCyclistId);
+      if (!movingCyclist || !oldNode) return [];
+
+      const chain = [];
+      const used = new Set([movingCyclistId]);
+      let vacated = oldNode;
+
+      while (vacated) {
+        const follower = cyclistArray.find(c => {
+          if (used.has(c.id) || c.eliminated || !c.node) return false;
+          if (!allSlipstream && c.team !== movingCyclist.team) return false;
+          return trackGraph[c.node]?.next === vacated;
+        });
+        if (!follower) break;
+
+        chain.push({ cyclist: follower, from: follower.node, to: vacated });
+        used.add(follower.id);
+        vacated = follower.node;
+      }
+      return chain;
+    }
+
+    function applyTeammatePush(cyclistArray, movingCyclistId, oldNode, targetNode) {
+      slipstreamChain(cyclistArray, movingCyclistId, oldNode).forEach(link => {
+        link.cyclist.node = link.to;
+        const fromRow1 = ['Bl1', 'Bk1', 'R1'].includes(link.from);
+        const toRow1b = ['Bl1b', 'Bk1b', 'R1b'].includes(link.to);
+        if (fromRow1 && toRow1b) link.cyclist.laps++;
+      });
+    }
+
+    function simulateMove(currentCyclists, cyclistId, targetNode) {
+      let activeCyclists = currentCyclists.map(c => ({...c})); 
+      let activeC = activeCyclists.find(c => c.id === cyclistId);
+      if (!activeC) return activeCyclists;
+      // Staying put is a rest. It must not be treated as a move, or the teammate
+      // behind is pulled onto the same square.
+      if (activeC.node === targetNode) return activeCyclists;
+      
+      let oldNode = activeC.node;
+      activeC.node = targetNode;
+      
+      const isRow1 = ['Bl1', 'Bk1', 'R1'].includes(oldNode);
+      const isRow1b = ['Bl1b', 'Bk1b', 'R1b'].includes(targetNode);
+      if (isRow1 && isRow1b) activeC.laps++;
+      
+      applyTeammatePush(activeCyclists, activeC.id, oldNode, targetNode);
+      
+      return activeCyclists;
+    }
+
+    function stepList(node) {
+      const g = trackGraph[node];
+      if (!g) return [];
+      const steps = [];
+      if (g.next) steps.push(g.next);
+      if (g.in) steps.push(...g.in);
+      if (g.out) steps.push(...g.out);
+      return steps;
+    }
+
+    function sharesSide(a, b) {
+      const g = trackGraph[a];
+      if (!g) return false;
+      return (g.in && g.in.includes(b)) || (g.out && g.out.includes(b));
+    }
+
+    function ridersConnected(a, b) {
+      if (!a || !b) return null;
+      if (trackGraph[a]?.next === b || trackGraph[b]?.next === a) return 'draft';
+      if (sharesSide(a, b) || sharesSide(b, a)) return 'wall';
+      return null;
+    }
+
+    // Same elimination rules as checkEliminations, applied to a position the AI is imagining.
+    function projectEliminations(list) {
+      const copy = list.map(c => ({ ...c }));
+      const active = copy.filter(c => !c.eliminated);
+      if (active.length <= 1) return copy;
+      const maxLap = Math.max(...active.map(c => c.laps));
+      const minLap = Math.min(...active.map(c => c.laps));
+      if (maxLap > 1) {
+        const last = active.filter(c => c.laps === minLap);
+        const doom = (last.length === 1 && maxLap > minLap) || (maxLap - minLap >= 2);
+        if (doom) last.forEach(c => { c.eliminated = true; });
+      }
+      return copy;
+    }
+
+    function evaluateFutureState(team, virtualCyclists) {
+      const before = new Set(virtualCyclists.filter(c => c.eliminated).map(c => c.id));
+      const projected = projectEliminations(virtualCyclists);
+      const alive = projected.filter(c => !c.eliminated);
+      const aliveTeams = new Set(alive.map(c => c.team));
+
+      if (alive.length === 0) return -99999;
+      if (aliveTeams.size === 1 && aliveTeams.has(team)) return 100000;
+      if (!aliveTeams.has(team)) return -100000;
+
+      let score = 0;
+      projected.forEach(c => {
+        if (!before.has(c.id) && c.eliminated) {
+          score += c.team === team ? -30000 : 12000;
+        }
+      });
+
+      const ourRiders = alive.filter(c => c.team === team);
+      const opponents = alive.filter(c => c.team !== team);
+      const occupied = new Set(alive.map(c => c.node));
+
+      const maxLap = Math.max(...alive.map(c => c.laps));
+      const minLap = Math.min(...alive.map(c => c.laps));
+      const onMin = alive.filter(c => c.laps === minLap);
+      if (maxLap === minLap + 1 && onMin.length === 1 && onMin[0].team === team) {
+        score -= 6000;
+      } else if (maxLap >= minLap + 1 && onMin.length <= 2 && onMin.some(c => c.team === team)) {
+        score -= 900;
+      }
+
+      let worstOpponentScore = Infinity;
+      opponents.forEach(opp => {
+        const s = (opp.laps * 100) + (nodeProgress[opp.node] || 0) + getLaneAdvantage(opp.node);
+        if (s < worstOpponentScore) worstOpponentScore = s;
+      });
+
+      ourRiders.forEach(c => {
+        const cScore = (c.laps * 100) + (nodeProgress[c.node] || 0) + getLaneAdvantage(c.node);
+        score += cScore * 40;
+        score += c.energy * 45;
+
+        if (cScore < worstOpponentScore) {
+          score -= (worstOpponentScore - cScore) * 30;
+        }
+
+        opponents.forEach(opp => {
+          const towingOpponent = trackGraph[opp.node]?.next === c.node;
+          const draftingOpponent = trackGraph[c.node]?.next === opp.node;
+          if (allSlipstream) {
+            if (draftingOpponent) score += 140;
+            if (towingOpponent) score -= 160;
+            return;
+          }
+          if (!towingOpponent) return;
+          score += 70;
+          const open = stepList(opp.node).filter(n => !occupied.has(n));
+          if (open.length === 0) score += 90;
+          else if (open.length === 1) score += 25;
+        });
+      });
+
+      if (ourRiders.length === 2) {
+        const link = ridersConnected(ourRiders[0].node, ourRiders[1].node);
+        if (link === 'draft') score += 160;
+        else if (link === 'wall') score += 145;
+        else if (nodesData[ourRiders[0].node].lane === nodesData[ourRiders[1].node].lane) {
+          const dist = Math.abs((nodeProgress[ourRiders[0].node] || 0) - (nodeProgress[ourRiders[1].node] || 0));
+          if (dist === 2) score += 60;
+          if (dist === 3) score += 30;
+        }
+      }
+      return score;
+    }
+
+    function checkAISetup() {
+      if (GameStore.status !== 'SETUP') return;
+
+      let currentTeam = teamsOrder[currentTeamIndex];
+      if (teamControllers[currentTeam] === 'AI') {
+        let unplaced = cyclists.find(c => c.team === currentTeam && !c.node);
+        if (unplaced) {
+          let available = startingGrid.filter(node => !cyclists.some(c => c.node === node));
+          if (available.length > 0) {
+            available.sort((a, b) => {
+              let scoreA = (nodeProgress[a] || 0) + getLaneAdvantage(a);
+              let scoreB = (nodeProgress[b] || 0) + getLaneAdvantage(b);
+              return scoreB - scoreA;
+            });
+            unplaced.node = available[0];
+            currentTeamIndex = (currentTeamIndex + 1) % teamsOrder.length;
+
+            if (!cyclists.some(c => !c.node)) {
+              startGame();
+            } else {
+              if (aiTimeout) clearTimeout(aiTimeout);
+              aiTimeout = setTimeout(() => { checkAISetup(); draw(); }, 400); 
+            }
+          }
+        }
+      }
+    }
+
+    function checkAITurn() {
+      if (GameStore.status !== 'PLAYING' || isAnimating || !GameStore.activeCyclist) return;
+      if (teamControllers[GameStore.activeCyclist.team] !== 'AI') return;
+
+      if (aiTimeout) clearTimeout(aiTimeout);
+      aiTimeout = setTimeout(() => { executeAILogic(); }, 600);
+    }
+
+    function getBestAIAction(c, movesList) {
+      if (!movesList || movesList.length === 0) return null;
+      let bestMove = movesList[0];
+      let maxScore = -Infinity;
+      
+      let shuffledMoves = [...movesList].sort(() => Math.random() - 0.5);
+
+      shuffledMoves.forEach(m => {
+        let simulatedState = simulateMove(cyclists, c.id, m.node);
+        let score = evaluateFutureState(c.team, simulatedState);
+        if (score > maxScore) {
+          maxScore = score;
+          bestMove = m;
+        }
+      });
+      return bestMove;
+    }
+
+    function executeAILogic() {
+      if (GameStore.status !== 'PLAYING' || isAnimating || !GameStore.activeCyclist) return;
+
+      let c = GameStore.activeCyclist;
+      updateValidMoves(true); 
+
+      if (GameStore.validMoves.length === 0) {
+        restActiveCyclist(); 
+        return;
+      }
+
+      if (GameStore.exert.active && GameStore.exert.phase === ExertPhase.SELECTING_TARGET_2) {
+        let bestMove = getBestAIAction(c, GameStore.validMoves);
+        executeMove(bestMove);
+        return;
+      }
+
+      let bestOption = null;
+      let highestUtility = -Infinity;
+
+      GameStore.validMoves.forEach(m => {
+        let nextState = simulateMove(cyclists, c.id, m.path[0]);
+        if (m.isSecondStep) {
+           nextState = simulateMove(nextState, c.id, m.node);
+           let tempC = nextState.find(cy => cy.id === c.id);
+           if (tempC) tempC.energy -= 1; 
+        }
+        
+        let utility = evaluateFutureState(c.team, nextState);
+        if (utility > highestUtility) {
+          highestUtility = utility;
+          bestOption = { move: m, exert: m.isSecondStep, rest: false };
+        }
+      });
+
+      if (c.energy < 3 && !GameStore.exert.active) {
+        let restState = simulateMove(cyclists, c.id, c.node); 
+        let restC = restState.find(cy => cy.id === c.id);
+        restC.energy += 1; 
+        
+        let utilityRest = evaluateFutureState(c.team, restState) - 25; 
+        
+        if (utilityRest > highestUtility) {
+          highestUtility = utilityRest;
+          bestOption = { move: null, exert: false, rest: true };
+        }
+      }
+
+      if (bestOption) {
+        if (bestOption.rest) {
+          restActiveCyclist();
+        } else if (bestOption.exert) {
+          c.energy--;
+          GameStore.exert = { active: true, phase: ExertPhase.AUTO_ROUTING };
+          c.moveQueue = [bestOption.move.path[1]];
+          executeMove({ node: bestOption.move.path[0] });
+        } else {
+          executeMove({ node: bestOption.move.path[0] });
+        }
+      } else {
+        restActiveCyclist(); 
+      }
+    }
+
+    // --------------------------------------------------------
+    // 5. GRAPHICS & UI
+    // --------------------------------------------------------
+    function applyLayoutTransform(context) {
+      context.scale(layout.dpr, layout.dpr);
+      context.translate(layout.offsetX, layout.offsetY);
+      context.scale(layout.scale, layout.scale);
+      if (layout.landscape) {
+        // Rotate the portrait logical space 90° CCW so the oval track goes horizontal.
+        // Centre of the landscape logical area is (logicalHeight/2, logicalWidth/2).
+        const lcx = logicalHeight / 2;
+        const lcy = logicalWidth  / 2;
+        context.translate(lcx, lcy);
+        context.rotate(-Math.PI / 2);
+        context.translate(-logicalWidth / 2, -logicalHeight / 2);
+      }
+    }
+
+    function cacheBackground() {
+      bgCanvas.width  = canvas.width;
+      bgCanvas.height = canvas.height;
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      
+      bgCtx.save();
+      applyLayoutTransform(bgCtx);
+      
+      bgCtx.lineWidth = 26; bgCtx.lineCap = 'butt';
+      [{c: '#ef4444', r: L.R}, {c: '#334155', r: L.Bk}, {c: '#3b82f6', r: L.Bl}].forEach(lane => {
+        bgCtx.strokeStyle = lane.c; bgCtx.globalAlpha = 0.3; 
+        bgCtx.beginPath();
+        bgCtx.moveTo(cx - lane.r, cyTop); bgCtx.lineTo(cx - lane.r, cyBot);
+        bgCtx.arc(cx, cyBot, lane.r, Math.PI, 0, true);
+        bgCtx.lineTo(cx + lane.r, cyTop);
+        bgCtx.arc(cx, cyTop, lane.r, 0, Math.PI, true);
+        bgCtx.stroke();
+      });
+      bgCtx.globalAlpha = 1.0;
+
+      const midY = (cyTop + cyBot) / 2; 
+      bgCtx.strokeStyle = '#ffffff'; bgCtx.lineWidth = 14;
+      bgCtx.beginPath(); 
+      bgCtx.moveTo(cx + L.R - 15, midY); bgCtx.lineTo(cx + L.Bl + 15, midY); bgCtx.stroke();
+      bgCtx.strokeStyle = '#000000'; bgCtx.lineWidth = 4;
+      bgCtx.beginPath(); 
+      bgCtx.moveTo(cx + L.R - 15, midY); bgCtx.lineTo(cx + L.Bl + 15, midY); bgCtx.stroke();
+
+      bgCtx.lineWidth = 2; bgCtx.strokeStyle = '#94a3b8';
+      for (let key in nodesData) {
+        bgCtx.fillStyle = '#1e293b';
+        bgCtx.beginPath(); bgCtx.arc(nodesData[key].x, nodesData[key].y, 6, 0, Math.PI * 2);
+        bgCtx.fill(); bgCtx.stroke();
+      }
+      bgCtx.restore();
+    }
+
+    function resizeAndDraw() {
+      const rect = document.getElementById('app-container').getBoundingClientRect();
+      layout.dpr = window.devicePixelRatio || 1;
+      layout.landscape = rect.width > rect.height;
+
+      // Move controls off the track: a side column when the oval is horizontal,
+      // a bottom row when it is vertical.
+      const ctrlEl = document.getElementById('controls');
+      if (layout.landscape) {
+        ctrlEl.style.cssText = 'position:absolute;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;bottom:auto;left:auto;z-index:10;';
+      } else {
+        ctrlEl.style.cssText = 'position:absolute;bottom:24px;left:0;right:0;display:flex;justify-content:center;gap:15px;flex-direction:row;top:auto;transform:none;z-index:10;';
+      }
+
+      const sideGutter = layout.landscape ? 220 : 0;
+      const bottomGutter = layout.landscape ? 0 : 96;
+      const availW = Math.max(160, rect.width - sideGutter);
+      const availH = Math.max(160, rect.height - bottomGutter);
+
+      // Portrait logical space, rotated 90° when the window is wider than it is tall.
+      const lw = layout.landscape ? logicalHeight : logicalWidth;
+      const lh = layout.landscape ? logicalWidth  : logicalHeight;
+
+      layout.scale = Math.min(availW / lw, availH / lh) * 0.95;
+      layout.offsetX = (availW - lw * layout.scale) / 2;
+      layout.offsetY = (availH - lh * layout.scale) / 2;
+
+      canvas.width  = rect.width  * layout.dpr;
+      canvas.height = rect.height * layout.dpr;
+
+      cacheBackground();
+      draw();
+    }
+
+    // Map a CSS pixel on the canvas back through the same transform used to draw.
+    function screenToLogical(cssX, cssY) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      applyLayoutTransform(ctx);
+      const point = ctx.getTransform().inverse().transformPoint(new DOMPoint(cssX * layout.dpr, cssY * layout.dpr));
+      ctx.restore();
+      return { x: point.x, y: point.y };
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bgCanvas, 0, 0); 
+      
+      ctx.save();
+      applyLayoutTransform(ctx);
+      
+      // Draw Interactive Overlay Nodes
+      ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff';
+      for (let key in nodesData) {
+        let moveTarget = !isAnimating ? GameStore.validMoves.find(m => m.node === key) : null;
+        let isTarget = !!moveTarget;
+        let isSetupNode = false;
+
+        if (GameStore.status === 'SETUP') {
+          isSetupNode = startingGrid.includes(key) && !cyclists.some(c => c.node === key);
+        } 
+
+        if (isSetupNode || isTarget) {
+            let fillCol = (GameStore.status === 'SETUP' && isSetupNode) ? 
+                          (TEAM_COLORS[teamsOrder[currentTeamIndex]] || 'rgba(255,255,255,0.6)') : GameStore.activeCyclist.color;
+            let alpha = (isTarget && moveTarget.isSecondStep) ? 0.5 : 1.0;
+
+            ctx.fillStyle = fillCol;
+            ctx.globalAlpha = alpha;
+            ctx.beginPath(); ctx.arc(nodesData[key].x, nodesData[key].y, 6, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        }
+      }
+
+      // Draw Cyclists
+      cyclists.filter(c => !c.eliminated && c.node).forEach(c => {
+        const isSelected = GameStore.activeCyclist && GameStore.activeCyclist.id === c.id;
+        
+        let cx_pos, cy_pos;
+        let anim = GameStore.animations.find(a => a.cyclist.id === c.id);
+        
+        if (anim) {
+            cx_pos = anim.startX + (anim.endX - anim.startX) * animationProgress;
+            cy_pos = anim.startY + (anim.endY - anim.startY) * animationProgress;
+        } else {
+            cx_pos = nodesData[c.node].x;
+            cy_pos = nodesData[c.node].y;
+        }
+
+        let isGreyedOut = GameStore.status === 'PLAYING' && (!isSelected) && !anim;
+        ctx.globalAlpha = isGreyedOut ? 0.45 : 1.0;
+
+        ctx.fillStyle = c.color;
+        ctx.strokeStyle = isSelected ? '#f59e0b' : '#ffffff'; ctx.lineWidth = isSelected ? 4 : 2;
+        
+        ctx.beginPath(); ctx.arc(cx_pos, cy_pos, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        
+        const riderNo = TEAM_IDS[c.team].indexOf(c.id) + 1;
+        ctx.fillStyle = '#ffffff'; ctx.font = '700 14px Outfit, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(riderNo), cx_pos, cy_pos + 0.5);
+
+        ctx.fillStyle = '#f59e0b';
+        for(let i=0; i<c.energy; i++) {
+          ctx.beginPath(); ctx.arc(cx_pos - 8 + (i*8), cy_pos + 18, 3, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1.0; 
+      });
+      
+      if (GameStore.status === 'GAMEOVER') {
+        let winner = cyclists.find(c => !c.eliminated);
+        if (winner) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          ctx.fillRect(-100, -100, logicalWidth + 200, logicalHeight + 200); 
+          ctx.fillStyle = winner.color;
+          ctx.font = '600 42px Teko, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`🏆 ${winner.team} WINS! 🏆`, cx, cyTop + 100);
+        }
+      }
+
+      ctx.restore();
+      updateUI();
+    }
+
+    function updateUI() {
+      if (GameStore.status === 'SETUP') {
+        const activeTeam = teamsOrder[currentTeamIndex];
+        const controller = teamControllers[activeTeam];
+        const placed = cyclists.filter(c => c.team === activeTeam && c.node).length;
+        turnBanner.textContent = `Place ${activeTeam} rider ${placed + 1} of 2 (${controller})`;
+        turnBanner.style.color = TEAM_COLORS[activeTeam] || '#ffffff';
+        turnBanner.style.display = 'block';
+      } else if (GameStore.status === 'PLAYING' && GameStore.activeCyclist) {
+        const riderNo = TEAM_IDS[GameStore.activeCyclist.team].indexOf(GameStore.activeCyclist.id) + 1;
+        const blocked = !isAnimating && GameStore.validMoves.length === 0 ? ' — blocked' : '';
+        turnBanner.textContent = `${GameStore.activeCyclist.team} rider ${riderNo}${blocked}`;
+        turnBanner.style.color = GameStore.activeCyclist.color;
+        turnBanner.style.display = 'block';
+
+        if (GameStore.activeCyclist.energy < 3) {
+            btnRest.textContent = 'Rest (+1 Energy)';
+        } else {
+            btnRest.textContent = 'Skip Turn';
+        }
+      } else {
+        turnBanner.style.display = 'none';
+      }
+
+      if (GameStore.status === 'GAMEOVER') {
+        btnExert.style.display = 'none';
+        btnRest.style.display = 'none';
+        btnCancel.style.display = 'none';
+        turnBanner.style.display = 'none';
+        return;
+      }
+
+      if (GameStore.status === 'PLAYING' && GameStore.activeCyclist && teamControllers[GameStore.activeCyclist.team] === 'Human' && !isAnimating) {
+        btnExert.style.display = (GameStore.activeCyclist.energy > 0 && !GameStore.exert.active && GameStore.validMoves.length > 0) ? 'block' : 'none';
+        btnRest.style.display = (!GameStore.exert.active) ? 'block' : 'none';
+        btnCancel.style.display = (GameStore.exert.active && GameStore.exert.phase === ExertPhase.SELECTING_TARGET_1) ? 'block' : 'none';
+      } else {
+        btnExert.style.display = 'none';
+        btnRest.style.display = 'none';
+        btnCancel.style.display = 'none';
+      }
+    }
+
+    // --------------------------------------------------------
+    // 6. GAME PLAY MECHANICS & INPUT
+    // --------------------------------------------------------
+    function handleInput(e) {
+      e.preventDefault();
+      if (GameStore.status === 'GAMEOVER' || isAnimating) return; 
+
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      
+      const cssX = clientX - rect.left;
+      const cssY = clientY - rect.top;
+      const { x, y } = screenToLogical(cssX, cssY);
+
+      if (GameStore.status === 'SETUP') {
+          let activeTeam = teamsOrder[currentTeamIndex];
+          if (teamControllers[activeTeam] === 'AI') return;
+
+          let clickedNode = startingGrid.find(n => Math.hypot(nodesData[n].x - x, nodesData[n].y - y) < 20);
+          if (clickedNode && !cyclists.some(c => c.node === clickedNode)) {
+              let unplaced = cyclists.find(c => c.team === activeTeam && !c.node);
+              if (unplaced) {
+                  unplaced.node = clickedNode;
+                  currentTeamIndex = (currentTeamIndex + 1) % teamsOrder.length;
+                  
+                  if (!cyclists.some(c => !c.node)) startGame();
+                  else checkAISetup();
+                  
+                  draw();
+              }
+          }
+          return;
+      }
+
+      if (GameStore.activeCyclist && teamControllers[GameStore.activeCyclist.team] === 'Human') {
+        let clickedMove = GameStore.validMoves.find(m => Math.hypot(nodesData[m.node].x - x, nodesData[m.node].y - y) < 20);
+        if (clickedMove) { 
+            if (clickedMove.path && clickedMove.path.length === 2) {
+                GameStore.activeCyclist.moveQueue = [clickedMove.path[1]];
+                GameStore.exert.phase = ExertPhase.AUTO_ROUTING;
+                executeMove({node: clickedMove.path[0]});
+            } else {
+                if (GameStore.exert.active && GameStore.exert.phase === ExertPhase.SELECTING_TARGET_1) {
+                    GameStore.exert.phase = ExertPhase.ANIMATING_STEP_1;
+                } else if (GameStore.exert.active && GameStore.exert.phase === ExertPhase.SELECTING_TARGET_2) {
+                    GameStore.exert.phase = ExertPhase.ANIMATING_STEP_2;
+                }
+                executeMove(clickedMove); 
+            }
+        }
+      }
+    }
+
+    function startGame() {
+        GameStore.status = 'PLAYING';
+        GameStore.turnQueue = getRankedCyclists(cyclists);
+        startNextTurn();
+    }
+
+    function updateValidMoves(isAIEval = false) {
+      GameStore.validMoves = [];
+      if (!GameStore.activeCyclist) return;
+      
+      let getMoves = (node, currentCyclists) => {
+          let moves = [];
+          const graph = trackGraph[node];
+          const isOccupied = (n) => currentCyclists.some(c => c.node === n && !c.eliminated);
+          if (!isOccupied(graph.next)) moves.push(graph.next);
+          if (graph.in) graph.in.forEach(n => { if (!isOccupied(n)) moves.push(n); });
+          if (graph.out) graph.out.forEach(n => { if (!isOccupied(n)) moves.push(n); });
+          return moves;
+      };
+
+      let step1 = getMoves(GameStore.activeCyclist.node, cyclists);
+      
+      step1.forEach(n1 => {
+          GameStore.validMoves.push({ node: n1, path: [n1], isSecondStep: false });
+      });
+
+      let checkStep2 = (GameStore.exert.active && GameStore.exert.phase === ExertPhase.SELECTING_TARGET_1) || 
+                       (isAIEval && GameStore.activeCyclist.energy > 0 && !GameStore.exert.active);
+
+      if (checkStep2) {
+          step1.forEach(n1 => {
+              let simState = simulateMove(cyclists, GameStore.activeCyclist.id, n1);
+              let step2 = getMoves(n1, simState);
+              step2.forEach(n2 => {
+                  if (!GameStore.validMoves.some(m => m.node === n2)) {
+                      GameStore.validMoves.push({ node: n2, path: [n1, n2], isSecondStep: true });
+                  }
+              });
+          });
+      }
+    }
+
+    function executeMove(move) {
+      const oldNode = GameStore.activeCyclist.node;
+      const newNode = move.node;
+
+      GameStore.animations = [{
+          cyclist: GameStore.activeCyclist,
+          startX: nodesData[oldNode].x, startY: nodesData[oldNode].y,
+          endX: nodesData[newNode].x, endY: nodesData[newNode].y,
+          targetNode: newNode
+      }];
+
+      slipstreamChain(cyclists, GameStore.activeCyclist.id, oldNode).forEach(link => {
+          GameStore.animations.push({
+              cyclist: link.cyclist,
+              startX: nodesData[link.from].x, startY: nodesData[link.from].y,
+              endX: nodesData[link.to].x, endY: nodesData[link.to].y,
+              targetNode: link.to
+          });
+      });
+
+      isAnimating = true;
+      GameStore.validMoves = [];
+      animationStartTime = 0;
+      requestAnimationFrame(animateLoop);
+    }
+
+    function animateLoop(timestamp) {
+        if (!animationStartTime) animationStartTime = timestamp;
+        let elapsed = timestamp - animationStartTime;
+        let p = Math.min(elapsed / 300, 1); 
+        
+        animationProgress = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+        
+        draw();
+
+        if (elapsed < 300) requestAnimationFrame(animateLoop);
+        else finalizeMove();
+    }
+
+    function finalizeMove() {
+      isAnimating = false;
+
+      GameStore.animations.forEach(anim => {
+          let c = anim.cyclist;
+          let oldNode = c.node;
+          c.node = anim.targetNode;
+
+          const isRow1 = ['Bl1', 'Bk1', 'R1'].includes(oldNode);
+          const isRow1b = ['Bl1b', 'Bk1b', 'R1b'].includes(c.node);
+          if (isRow1 && isRow1b) c.laps++;
+      });
+
+      GameStore.animations = [];
+      checkEliminations();
+
+      if (GameStore.status === 'GAMEOVER') {
+          draw();
+          return;
+      }
+
+      if (GameStore.activeCyclist && GameStore.activeCyclist.moveQueue && GameStore.activeCyclist.moveQueue.length > 0) {
+          let nextNode = GameStore.activeCyclist.moveQueue.shift();
+          executeMove({node: nextNode});
+          return;
+      }
+
+      if (GameStore.exert.active) {
+        if (GameStore.exert.phase === ExertPhase.ANIMATING_STEP_1) {
+          GameStore.exert.phase = ExertPhase.SELECTING_TARGET_2;
+          updateValidMoves();
+          if (GameStore.validMoves.length === 0) endTurn();
+          else { draw(); }
+        } else if (GameStore.exert.phase === ExertPhase.ANIMATING_STEP_2 || GameStore.exert.phase === ExertPhase.AUTO_ROUTING) {
+          endTurn();
+        } else {
+          endTurn();
+        }
+      } else {
+        endTurn();
+      }
+    }
+
+    function startExert() {
+      if (GameStore.activeCyclist && GameStore.activeCyclist.energy > 0) {
+        GameStore.activeCyclist.energy--;
+        GameStore.exert = { active: true, phase: ExertPhase.SELECTING_TARGET_1 };
+        updateValidMoves(); draw();
+      }
+    }
+
+    function restActiveCyclist() {
+      if (GameStore.activeCyclist && !GameStore.exert.active) {
+        GameStore.activeCyclist.energy = Math.min(3, GameStore.activeCyclist.energy + 1);
+        endTurn();
+      }
+    }
+
+    function cancelSelection() {
+      if (isAnimating) return;
+      if (GameStore.exert.active && GameStore.exert.phase === ExertPhase.SELECTING_TARGET_1) { 
+          GameStore.activeCyclist.energy++;
+          GameStore.exert = { active: false, phase: ExertPhase.IDLE };
+          updateValidMoves();
+          draw(); 
+      }
+    }
+
+    function endTurn() {
+      if (GameStore.activeCyclist) GameStore.activeCyclist.moveQueue = [];
+      startNextTurn();
+    }
+
+    function checkEliminations() {
+      let active = getRankedCyclists(cyclists);
+      if (active.length <= 1) {
+          GameStore.status = 'GAMEOVER';
+          return;
+      }
+
+      let maxLap = Math.max(...active.map(c => c.laps));
+      let minLap = Math.min(...active.map(c => c.laps));
+      
+      // Eliminations only start after someone finishes Lap 1
+      if (maxLap > 1) {
+        let lastPlaceRiders = active.filter(c => c.laps === minLap);
+        let shouldEliminate = false;
+        
+        // 1. Standard: Exactly one rider is left behind (last across the line)
+        if (lastPlaceRiders.length === 1 && maxLap > minLap) {
+            shouldEliminate = true;
+        }
+        // 2. Anti-Stall: Multiple riders are stuck, and the leader has lapped them
+        else if (maxLap - minLap >= 2) {
+            shouldEliminate = true;
+        }
+
+        if (shouldEliminate) {
+          lastPlaceRiders.forEach(eliminatedRider => {
+              eliminatedRider.eliminated = true;
+              GameStore.turnQueue = GameStore.turnQueue.filter(c => c.id !== eliminatedRider.id);
+          });
+
+          if (cyclists.filter(c => !c.eliminated).length <= 1) {
+              GameStore.status = 'GAMEOVER';
+          }
+        }
+      }
+    }
+
+    window.addEventListener('resize', resizeAndDraw);
+    window.addEventListener('load', resizeAndDraw);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => resizeAndDraw());
+    canvas.addEventListener('mousedown', handleInput);
+    canvas.addEventListener('touchstart', handleInput, { passive: false });
+
+    document.addEventListener('keydown', (e) => {
+      if (GameStore.status !== 'PLAYING' || isAnimating || !GameStore.activeCyclist) return;
+      if (teamControllers[GameStore.activeCyclist.team] !== 'Human') return;
+      const key = e.key.toLowerCase();
+      if (key === 'e') { e.preventDefault(); startExert(); }
+      else if (key === 'r') { e.preventDefault(); restActiveCyclist(); }
+      else if (key === 'escape') { e.preventDefault(); cancelSelection(); }
+    });
+
+  </script>
+</body>
+</html>

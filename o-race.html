@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⬡-Race | Meki Labs</title>
+    <meta name="description" content="Tactical hex racing. Lay mountains, carve forest paths, and outwit your opponent across a procedurally generated course.">
+    <meta property="og:title" content="⬡-Race | Meki Labs">
+    <meta property="og:description" content="Tactical hex racing. Lay mountains, carve forest paths, and outwit your opponent across a procedurally generated course.">
+    <meta property="og:image" content="https://mekilabs.com/icons/o-race-banner.png">
+    <meta property="og:url" content="https://mekilabs.com/o-race.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="/icons/o-race-icon.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/tailwind.min.css">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --hex-clear: #1e293b;
+            --hex-stroke: #334155;
+            --mountain: #475569;
+            --forest: #166534;
+            --path: #ca8a04;
+            --red-player: #ef4444;
+            --blue-player: #3b82f6;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #f8fafc;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        h1, h2, h3, .brand { font-family: 'Orbitron', sans-serif; }
+        .btn-action { font-family: 'Orbitron', sans-serif; text-transform: uppercase; font-weight: 700; }
+
+        #game-container { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
+        #board-container { flex-grow: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; transition: opacity 0.3s; }
+        #hex-svg { width: 100%; height: 100%; max-height: 100%; }
+        #context-move, #context-map { min-height: 4.5rem; height: auto; }
+        #start-modal > div { overflow-x: hidden; }
+
+        .hex { cursor: pointer; transition: stroke-width 0.2s; }
+        .hex:hover { stroke-width: 1.5; }
+
+        .hex-clear { fill: var(--hex-clear); stroke: var(--hex-stroke); }
+        .hex-mountain { fill: var(--mountain); stroke: #94a3b8; }
+        .hex-forest { fill: var(--forest); stroke: #4ade80; }
+        .hex-path { fill: var(--path); stroke: #fef08a; }
+
+        .hex-preview-valid { fill: #ffffff; opacity: 0.5; stroke: #fff; }
+        .hex-preview-invalid { fill: #ef4444; opacity: 0.5; stroke: #fca5a5; }
+
+        .dash-anim { stroke-dasharray: 6; animation: dash 2s linear infinite; }
+        @keyframes dash { to { stroke-dashoffset: -12; } }
+
+        /* Smooth, slightly bouncy animation for runners */
+        .runner { 
+            transition: cx 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), cy 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+        }
+
+        .bottom-panel { background: #1e293b; border-top: 2px solid #334155; padding: 1rem; z-index: 10; transition: opacity 0.3s; }
+        
+        .toast {
+            position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9); color: white; padding: 0.75rem 1.5rem;
+            border-radius: 9999px; font-weight: bold; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s; z-index: 50; text-align: center;
+        }
+        .toast.show { opacity: 1; }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .ai-thinking { pointer-events: none; opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+<div id="start-modal" class="modal-overlay active">
+    <div class="bg-slate-800 p-6 sm:p-8 rounded-lg border-2 border-slate-500 text-center max-w-sm mx-4 shadow-2xl relative w-full max-h-[90vh] overflow-y-auto">
+        <div class="absolute top-0 left-0 w-32 h-32 bg-blue-600 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
+        <div class="absolute bottom-0 right-0 w-32 h-32 bg-red-600 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
+        
+        <h1 class="text-4xl sm:text-5xl font-bold mb-1 brand tracking-widest flex items-center justify-center">
+            <svg class="w-9 h-9 sm:w-12 sm:h-12 mr-1" viewBox="-12 -12 24 24" fill="none" stroke="url(#hexGradient)" stroke-width="2.5">
+                <defs>
+                    <linearGradient id="hexGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#f8fafc" />
+                        <stop offset="100%" stop-color="#94a3b8" />
+                    </linearGradient>
+                </defs>
+                <polygon points="0,-10 8.66,-5 8.66,5 0,10 -8.66,5 -8.66,-5"/>
+            </svg>
+            <span class="text-transparent bg-clip-text bg-gradient-to-br from-slate-100 to-slate-400">-RACE</span>
+        </h1>
+        <div class="text-xs sm:text-sm text-blue-400 mb-4 font-bold tracking-widest uppercase">Tactical Hex Racing</div>
+        
+        <!-- Game Configuration Toggles -->
+        <div class="flex flex-col gap-3 text-left bg-slate-900 p-3 rounded border border-slate-600 mb-4 shadow-inner">
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-slate-300 text-xs font-bold uppercase tracking-wider">Course Length</span>
+                <span id="len-desc" class="text-blue-400 text-[10px] uppercase font-bold">18–24 DIST</span>
+            </div>
+            <div class="flex gap-1 mb-2">
+                <button id="btn-len-3" onclick="setLength(3)" class="flex-1 py-1.5 bg-blue-600 text-white text-xs font-bold rounded shadow-inner transition-colors">3 CP</button>
+                <button id="btn-len-4" onclick="setLength(4)" class="flex-1 py-1.5 bg-slate-800 text-slate-400 hover:bg-slate-700 text-xs font-bold rounded border border-slate-700 transition-colors">4 CP</button>
+                <button id="btn-len-5" onclick="setLength(5)" class="flex-1 py-1.5 bg-slate-800 text-slate-400 hover:bg-slate-700 text-xs font-bold rounded border border-slate-700 transition-colors">5 CP</button>
+            </div>
+
+            <div class="flex justify-between items-center mb-1 mt-1">
+                <span class="text-slate-300 text-xs font-bold uppercase tracking-wider">Course Mode</span>
+            </div>
+            <div class="flex gap-1">
+                <button id="btn-mode-diff" onclick="setMode('diff')" class="flex-1 py-1.5 bg-blue-600 text-white text-xs font-bold rounded shadow-inner transition-colors">DIFFERENT</button>
+                <button id="btn-mode-same" onclick="setMode('same')" class="flex-1 py-1.5 bg-slate-800 text-slate-400 hover:bg-slate-700 text-xs font-bold rounded border border-slate-700 transition-colors">SAME COURSE</button>
+            </div>
+        </div>
+        
+        <details class="text-left text-sm text-slate-300 bg-slate-900 border border-slate-600 rounded p-3 mb-1">
+            <summary class="cursor-pointer font-bold uppercase tracking-wider text-xs text-slate-200">How to play</summary>
+            <p class="mt-2 leading-snug">You have 2 movement each turn. Clear hexes cost 1, forest costs 2, a path is free, and mountains block. Reach your checkpoints in order, then the finish.</p>
+            <p class="mt-2 leading-snug">Before you move, use MAP to lay a shape. Mountains and forests go on clear ground. Paths can cover clear ground or forest. You cannot wall off either racer. After you move, building waits until next turn.</p>
+        </details>
+        <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between bg-slate-700 p-3 rounded border border-slate-500 mb-1">
+                <span class="text-slate-300 text-xs font-bold uppercase">AI Difficulty:</span>
+                <select id="modal-ai-difficulty" onchange="state.aiDifficulty = this.value;" class="bg-slate-800 text-white text-xs font-bold rounded px-2 py-1 outline-none border border-slate-600 focus:border-blue-500 transition-colors">
+                    <option value="easy">EASY</option>
+                    <option value="medium">MEDIUM</option>
+                    <option value="hard" selected>HARD</option>
+                </select>
+            </div>
+            <button onclick="startGame(true)" class="w-full py-3 sm:py-4 bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-bold rounded shadow-lg transition-transform transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 border border-blue-400">
+                <span class="text-xl">🤖</span> PLAY VS AI
+            </button>
+            <button onclick="startGame(false)" class="w-full py-3 sm:py-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded shadow-lg transition-transform transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 border border-slate-500">
+                <span class="text-xl">👥</span> PLAY LOCAL (2P)
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="game-container">
+    <header class="p-3 sm:p-4 flex justify-between items-center bg-slate-800 shadow-md relative z-40">
+        <div>
+            <h1 class="text-lg sm:text-xl font-bold text-slate-100 brand tracking-wider flex items-center">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-0.5" viewBox="-12 -12 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polygon points="0,-10 8.66,-5 8.66,5 0,10 -8.66,5 -8.66,-5"/>
+                </svg>
+                -RACE
+            </h1>
+            <div class="text-xs text-slate-400 hidden sm:block">Tactical Hex Racing</div>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-4">
+            <div id="turn-indicator" class="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold text-xs sm:text-sm btn-action border shadow-lg transition-colors">
+                <div id="turn-dot" class="w-2 h-2 sm:w-3 sm:h-3 rounded-full animate-pulse"></div>
+                <span id="turn-text"></span>
+            </div>
+            <button onclick="document.getElementById('side-menu').classList.toggle('translate-x-full')" class="text-slate-300 hover:text-white text-2xl font-bold px-1 sm:px-2 ml-1 transition-colors">☰</button>
+        </div>
+    </header>
+
+    <div id="board-container">
+        <svg id="hex-svg" viewBox="-140 -140 280 280">
+            <g id="hex-grid"></g>
+            <g id="move-dots-layer"></g>
+            <g id="direction-layer"></g>
+            <g id="checkpoints-layer"></g>
+            <g id="overlays-layer"></g>
+            <g id="preview-layer"></g>
+            <!-- Fixed Runner Layer for CSS Transitions -->
+            <g id="runners-layer">
+                <circle id="runner-red" r="4.5" fill="var(--red-player)" stroke="#fff" stroke-width="1.5" class="runner" pointer-events="none" cx="-999" cy="-999" />
+                <circle id="runner-blue" r="4.5" fill="var(--blue-player)" stroke="#fff" stroke-width="1.5" class="runner" pointer-events="none" cx="-999" cy="-999" />
+            </g>
+        </svg>
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <div class="bottom-panel shadow-[0_-5px_15px_rgba(0,0,0,0.3)] relative z-20">
+        <div class="flex gap-2 mb-3">
+            <button id="tab-move" class="flex-1 py-2 rounded font-bold text-center border-2 transition-colors" onclick="GameLogic.setAction('move')">MOVE</button>
+            <button id="tab-map" class="flex-1 py-2 rounded font-bold text-center border-2 transition-colors" onclick="GameLogic.setAction('map')">MAP</button>
+        </div>
+
+        <div id="context-move" class="text-center text-slate-300 text-sm h-16 flex flex-col justify-center"></div>
+
+        <div id="context-map" class="hidden h-16">
+            <div id="inventory-selection" class="flex gap-2 justify-center h-full items-center">
+                <button onclick="GameLogic.selectTerrain('mountain')" class="flex-1 max-w-[100px] flex flex-col items-center bg-slate-700 p-1 rounded border border-slate-500 relative hover:bg-slate-600 transition-colors">
+                    <span class="text-xs text-slate-300">Mountain</span>
+                    <div class="w-full h-2 bg-slate-500 mt-1"></div>
+                    <span id="inv-mountain" class="absolute -top-2 -right-2 bg-slate-900 border border-slate-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"></span>
+                </button>
+                <button onclick="GameLogic.selectTerrain('forest')" class="flex-1 max-w-[100px] flex flex-col items-center bg-slate-700 p-1 rounded border border-slate-500 relative hover:bg-slate-600 transition-colors">
+                    <span class="text-xs text-slate-300">Forest</span>
+                    <div class="w-full h-2 bg-green-700 mt-1"></div>
+                    <span id="inv-forest" class="absolute -top-2 -right-2 bg-slate-900 border border-slate-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"></span>
+                </button>
+                <button onclick="GameLogic.selectTerrain('path')" class="flex-1 max-w-[100px] flex flex-col items-center bg-slate-700 p-1 rounded border border-slate-500 relative hover:bg-slate-600 transition-colors">
+                    <span class="text-xs text-slate-300">Path</span>
+                    <div class="w-full h-2 bg-yellow-600 mt-1"></div>
+                    <span id="inv-path" class="absolute -top-2 -right-2 bg-slate-900 border border-slate-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"></span>
+                </button>
+            </div>
+            
+            <div id="placement-controls" class="hidden flex gap-1 justify-center h-full items-center w-full">
+                <button onclick="GameLogic.rotateShape()" class="flex-1 py-2 bg-slate-600 hover:bg-slate-500 rounded font-bold text-white text-xs sm:text-sm transition-colors">↺ ROT</button>
+                <button id="btn-shape" onclick="GameLogic.toggleShape()" class="hidden flex-1 py-2 bg-purple-600 hover:bg-purple-500 rounded font-bold text-white text-xs sm:text-sm whitespace-nowrap overflow-hidden transition-colors">▨ SHAPE</button>
+                <button onclick="GameLogic.confirmPlacement()" class="flex-1 py-2 bg-green-600 hover:bg-green-500 rounded font-bold text-white text-xs sm:text-sm transition-colors">✓ OK</button>
+                <button onclick="GameLogic.cancelPlacement()" class="py-2 px-3 bg-red-600 hover:bg-red-500 rounded font-bold text-white transition-colors">X</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slide-in Menu -->
+<div id="side-menu" class="fixed top-0 right-0 h-full w-64 bg-slate-800 border-l border-slate-600 transform translate-x-full transition-transform z-[200] shadow-2xl flex flex-col p-5">
+    <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-bold brand text-slate-100 tracking-wider">MENU</h2>
+        <button onclick="document.getElementById('side-menu').classList.toggle('translate-x-full')" class="text-4xl text-slate-400 hover:text-white leading-none transition-colors">&times;</button>
+    </div>
+    <button onclick="restartRound()" class="w-full py-4 mb-4 bg-blue-600 hover:bg-blue-500 rounded font-bold text-white transition-colors text-sm border border-blue-400 shadow-md">RESTART ROUND</button>
+    <button onclick="document.getElementById('side-menu').classList.toggle('translate-x-full')" class="w-full py-4 mb-4 bg-slate-700 hover:bg-slate-600 rounded font-bold text-white transition-colors text-sm border border-slate-500 shadow-md">CONTINUE</button>
+    <div class="flex-grow"></div>
+    <button onclick="location.reload()" class="w-full py-4 bg-red-600 hover:bg-red-500 rounded font-bold text-white transition-colors text-sm border border-red-500 shadow-md">BACK TO MENU</button>
+</div>
+
+<div id="win-modal" class="modal-overlay">
+    <div class="bg-slate-800 p-8 rounded-lg border-2 border-slate-500 text-center max-w-sm mx-4">
+        <h2 id="win-title" class="text-3xl font-bold mb-4 brand"></h2>
+        <p class="text-slate-300 mb-6">The path has been conquered.</p>
+        <button onclick="location.reload()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded shadow transition-colors">PLAY AGAIN</button>
+    </div>
+</div>
+
+<script>
+/**
+ * ⬡-RACE: Tactical Hex Racing
+ * Masterclass Engine (Unified A* Pathfinder + MP System)
+ */
+
+// --- 1. Constants & Tuning ---
+const BOARD_RADIUS = 5;
+const HEX_SIZE = 13;
+const MAX_MP = 2; 
+
+const GAME_TUNING = {
+    mountainScale: 0.45,
+    minTurnAngle: 45,
+    distMin: { 3: 18, 4: 25, 5: 30 },
+    distMax: { 3: 24, 4: 30, 5: 35 },
+    aiMistakeRate: { easy: 1/3, medium: 1/5, hard: 0 },
+    aiMaxSubMoves: 10,
+    aiGoodEnoughScore: 7.0 // Early exit threshold for AI placement search
+};
+
+const SHAPE_DEFS = {
+    line2: [{q:0, r:0}, {q:1, r:0}],
+    triangle: [{q:0, r:0}, {q:1, r:0}, {q:0, r:1}],
+    curve3: [{q:0, r:0}, {q:1, r:0}, {q:0, r:-1}],
+    straight3: [{q:-1, r:0}, {q:0, r:0}, {q:1, r:0}],
+    rhombus: [{q:0, r:0}, {q:1, r:0}, {q:1, r:-1}, {q:0, r:-1}]
+};
+
+const SHAPE_LABELS = { line2: 'LINE 2', triangle: 'TRIANGLE', curve3: 'CURVE 3', rhombus: 'RHOMBUS' };
+
+const config = { cpCount: 3, courseMode: 'diff' };
+
+// --- 2. State & Initializers ---
+function getDefaultInventory() {
+    return {
+        mountain: { triangle: 1, curve3: 1, line2: 1 },
+        forest: { triangle: 1, curve3: 1, rhombus: 1 },
+        path: { straight3: 1 }
+    };
+}
+
+function createInitialGrid() {
+    const grid = new Map();
+    for (let q = -BOARD_RADIUS; q <= BOARD_RADIUS; q++) {
+        let r1 = Math.max(-BOARD_RADIUS, -q - BOARD_RADIUS), r2 = Math.min(BOARD_RADIUS, -q + BOARD_RADIUS);
+        for (let r = r1; r <= r2; r++) grid.set(`${q},${r}`, { type: 'clear', pieceId: null });
+    }
+    return grid;
+}
+
+const state = {
+    turn: 'red',
+    action: 'move',
+    movesLeft: MAX_MP, 
+    hasMovedThisTurn: false,
+    winner: null,
+    
+    isAIEnabled: false,
+    aiDifficulty: 'hard',
+    aiTurnsSinceBuild: 0, 
+    aiSubMovesThisTurn: 0, 
+    
+    mapState: { selectedTerrain: null, rotation: 0, shapeName: null, previewCenter: null },
+    
+    start: { q: 0, r: 5 },
+    finish: { q: 0, r: -5 },
+    
+    checkpoints: { red: {}, blue: {} },
+    
+    red: { q: 0, r: 5, cp: 1, inventory: getDefaultInventory() },
+    blue: { q: 0, r: 5, cp: 1, inventory: getDefaultInventory() },
+    
+    grid: createInitialGrid(),
+    validMoves: new Map(),
+    pieceCounter: 0
+};
+
+// --- Landing Page Settings ---
+function setLength(n) {
+    config.cpCount = n;
+    [3,4,5].forEach(i => {
+        const btn = document.getElementById(`btn-len-${i}`);
+        btn.className = (i === n) 
+            ? "flex-1 py-1.5 bg-blue-600 text-white text-xs font-bold rounded shadow-inner transition-colors"
+            : "flex-1 py-1.5 bg-slate-800 text-slate-400 hover:bg-slate-700 text-xs font-bold rounded border border-slate-700 transition-colors";
+    });
+    const desc = {3: '18–24 DIST', 4: '25–30 DIST', 5: '30–35 DIST'};
+    document.getElementById('len-desc').innerText = desc[n];
+}
+
+function setMode(m) {
+    config.courseMode = m;
+    ['diff', 'same'].forEach(x => {
+        const btn = document.getElementById(`btn-mode-${x}`);
+        btn.className = (x === m)
+            ? "flex-1 py-1.5 bg-blue-600 text-white text-xs font-bold rounded shadow-inner transition-colors"
+            : "flex-1 py-1.5 bg-slate-800 text-slate-400 hover:bg-slate-700 text-xs font-bold rounded border border-slate-700 transition-colors";
+    });
+}
+
+function startGame(vsAI) {
+    document.getElementById('start-modal').classList.remove('active');
+    state.isAIEnabled = vsAI;
+    
+    GameLogic.generateNewCourses();
+    
+    ['red', 'blue'].forEach(p => {
+        state[p].q = state.start.q;
+        state[p].r = state.start.r;
+    });
+    
+    state.grid = createInitialGrid();
+    GameLogic.calculateValidMoves();
+    Renderer.renderAll();
+}
+
+function restartRound() {
+    ['red', 'blue'].forEach(p => {
+        state[p] = { 
+            q: state.start.q, r: state.start.r, cp: 1, 
+            inventory: getDefaultInventory()
+        };
+    });
+    
+    state.grid = createInitialGrid();
+
+    state.turn = 'red';
+    state.action = 'move';
+    state.movesLeft = MAX_MP; 
+    state.hasMovedThisTurn = false;
+    state.winner = null;
+    state.pieceCounter = 0;
+    state.aiTurnsSinceBuild = 0;
+    state.aiSubMovesThisTurn = 0;
+    state.mapState = { selectedTerrain: null, rotation: 0, shapeName: null, previewCenter: null };
+    
+    document.getElementById('side-menu').classList.add('translate-x-full');
+    document.getElementById('board-container').classList.remove('ai-thinking');
+    document.querySelector('.bottom-panel').classList.remove('ai-thinking');
+    
+    GameLogic.calculateValidMoves();
+    Renderer.renderAll();
+    GameLogic.showToast("Round Restarted!");
+}
+
+
+// --- 3. Math & Geometry Utilities ---
+const MathUtils = {
+    hexToPixel: (q, r, size) => ({ x: size * Math.sqrt(3) * (q + r/2), y: size * 3/2 * r }),
+    getNeighbors: (q, r) => [{q: q+1, r}, {q: q+1, r: r-1}, {q, r: r-1}, {q: q-1, r}, {q: q-1, r: r+1}, {q, r: r+1}],
+    hexDistance: (a, b) => Math.max(Math.abs(a.q - b.q), Math.abs(a.q + a.r - (b.q + b.r)), Math.abs(a.r - b.r)),
+    
+    /**
+     * Rotates a hex coordinate around the origin (0,0).
+     * Uses axial coordinate math: a 60 degree rotation swaps and negates axes: (q, r) -> (-r, q + r).
+     */
+    rotateHex: function(q, r, times) {
+        let cq = q, cr = r;
+        for (let i = 0; i < (times % 6); i++) {
+            let nq = -cr;
+            cr = cq + cr;
+            cq = nq;
+        }
+        return { q: cq, r: cr };
+    },
+
+    getHexPolygon: function(size) {
+        return Array.from({length: 6}, (_, i) => {
+            const rad = Math.PI / 180 * (60 * i - 30);
+            return `${size * Math.cos(rad)},${size * Math.sin(rad)}`;
+        }).join(" ");
+    },
+
+    getEdgeAdjustedLine: function(x1, y1, x2, y2, r1, r2) {
+        const dx = x2 - x1, dy = y2 - y1;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist <= r1 + r2) return null;
+        const nx = dx / dist, ny = dy / dist;
+        return { x1: x1 + nx * r1, y1: y1 + ny * r1, x2: x2 - nx * r2, y2: y2 - ny * r2 };
+    },
+
+    getOuterRingHexes: function() {
+        let hexes = [];
+        for (let q = -BOARD_RADIUS; q <= BOARD_RADIUS; q++) {
+            let r1 = Math.max(-BOARD_RADIUS, -q - BOARD_RADIUS);
+            let r2 = Math.min(BOARD_RADIUS, -q + BOARD_RADIUS);
+            for (let r = r1; r <= r2; r++) {
+                if (Math.max(Math.abs(q), Math.abs(q+r), Math.abs(r)) === BOARD_RADIUS) hexes.push({q, r});
+            }
+        }
+        return hexes;
+    },
+
+    angleBetween: function(p1, p2, p3) {
+        const px1 = this.hexToPixel(p1.q, p1.r, 1);
+        const px2 = this.hexToPixel(p2.q, p2.r, 1);
+        const px3 = this.hexToPixel(p3.q, p3.r, 1);
+        const d1 = { x: px2.x - px1.x, y: px2.y - px1.y };
+        const d2 = { x: px3.x - px2.x, y: px3.y - px2.y };
+        const mag1 = Math.hypot(d1.x, d1.y);
+        const mag2 = Math.hypot(d2.x, d2.y);
+        if (mag1 === 0 || mag2 === 0) return 0;
+        let dot = d1.x * d2.x + d1.y * d2.y;
+        let cos = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
+        let angle = Math.acos(cos) * 180 / Math.PI;
+        return Math.min(angle, 180 - angle); 
+    },
+
+    pointToSegmentDistance: function(px, py, x1, y1, x2, y2) {
+        const l2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+        if (l2 === 0) return Math.hypot(px - x1, py - y1);
+        let t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return Math.hypot(px - (x1 + t * (x2 - x1)), py - (y1 + t * (y2 - y1)));
+    }
+};
+
+// --- 4. Pathfinding Engine ---
+class MinHeap {
+    constructor() { this.heap = []; }
+    push(node) {
+        this.heap.push(node);
+        this.bubbleUp(this.heap.length - 1);
+    }
+    pop() {
+        if (this.heap.length === 0) return null;
+        if (this.heap.length === 1) return this.heap.pop();
+        const top = this.heap[0];
+        this.heap[0] = this.heap.pop();
+        this.sinkDown(0);
+        return top;
+    }
+    bubbleUp(idx) {
+        while (idx > 0) {
+            let parent = Math.floor((idx - 1) / 2);
+            if (this.heap[parent].cost <= this.heap[idx].cost) break;
+            [this.heap[parent], this.heap[idx]] = [this.heap[idx], this.heap[parent]];
+            idx = parent;
+        }
+    }
+    sinkDown(idx) {
+        const length = this.heap.length;
+        while (true) {
+            let left = 2 * idx + 1, right = 2 * idx + 2, smallest = idx;
+            if (left < length && this.heap[left].cost < this.heap[smallest].cost) smallest = left;
+            if (right < length && this.heap[right].cost < this.heap[smallest].cost) smallest = right;
+            if (smallest === idx) break;
+            [this.heap[idx], this.heap[smallest]] = [this.heap[smallest], this.heap[idx]];
+            idx = smallest;
+        }
+    }
+    get length() { return this.heap.length; }
+}
+
+const Pathfinding = {
+    getCurrentTarget: (playerKey) => state[playerKey].cp <= config.cpCount ? state.checkpoints[playerKey][state[playerKey].cp] : state.finish,
+    
+    isStartOrFinish: (q, r) => (q === state.start.q && r === state.start.r) || (q === state.finish.q && r === state.finish.r),
+
+    isOccupied: function(q, r) {
+        if (this.isStartOrFinish(q, r)) return true;
+        if ((q === state.red.q && r === state.red.r) || (q === state.blue.q && r === state.blue.r)) return true;
+        
+        for (let c = state.red.cp; c <= config.cpCount; c++) {
+            if (q === state.checkpoints.red[c].q && r === state.checkpoints.red[c].r) return true;
+        }
+        for (let c = state.blue.cp; c <= config.cpCount; c++) {
+            if (q === state.checkpoints.blue[c].q && r === state.checkpoints.blue[c].r) return true;
+        }
+        return false;
+    },
+
+    runPathfinder: function(startQ, startR, targetQ, targetR, gridMap, oppQ = null, oppR = null, maxCost = Infinity, isAI = true) {
+        const queue = new MinHeap();
+        queue.push({q: startQ, r: startR, cost: 0});
+        
+        const visited = new Map([[`${startQ},${startR}`, 0]]);
+        const cameFrom = new Map();
+        const oppStr = (oppQ !== null && oppR !== null && !this.isStartOrFinish(oppQ, oppR)) ? `${oppQ},${oppR}` : "";
+
+        let bestPath = [];
+        let targetCost = Infinity;
+
+        while(queue.length > 0) {
+            const curr = queue.pop();
+            const currKey = `${curr.q},${curr.r}`;
+
+            if (visited.get(currKey) < curr.cost) continue;
+
+            if (targetQ !== null && curr.q === targetQ && curr.r === targetR) {
+                targetCost = curr.cost;
+                let step = currKey;
+                while (step && step !== `${startQ},${startR}`) {
+                    bestPath.push(step);
+                    step = cameFrom.get(step);
+                }
+                bestPath.reverse();
+                break; 
+            }
+
+            for (const n of MathUtils.getNeighbors(curr.q, curr.r)) {
+                const nk = `${n.q},${n.r}`;
+                if (nk === oppStr) continue; 
+                
+                const nData = gridMap.get(nk);
+                if (!nData || nData.type === 'mountain') continue;
+
+                let stepCost = nData.type === 'forest' ? 2 : 1; 
+                if (nData.type === 'path') stepCost = isAI ? 0.01 : 0;
+
+                const newCost = curr.cost + stepCost;
+
+                if (newCost <= maxCost) {
+                    if (!visited.has(nk) || newCost < visited.get(nk)) {
+                        visited.set(nk, newCost);
+                        cameFrom.set(nk, currKey);
+                        queue.push({q: n.q, r: n.r, cost: newCost});
+                    }
+                }
+            }
+        }
+        return { cost: targetCost, path: bestPath, visited }; 
+    },
+
+    getFullRaceCost: function(playerKey, gridMap = state.grid, oppQ = null, oppR = null) {
+        const p = state[playerKey];
+        let totalCost = 0;
+        let curr = {q: p.q, r: p.r};
+        
+        for (let cp = p.cp; cp <= config.cpCount + 1; cp++) {
+            const target = cp <= config.cpCount ? state.checkpoints[playerKey][cp] : state.finish;
+            const { cost } = this.runPathfinder(curr.q, curr.r, target.q, target.r, gridMap, oppQ, oppR, Infinity, true);
+            if (cost === Infinity) return Infinity; 
+            totalCost += cost;
+            curr = target; 
+        }
+        return totalCost;
+    },
+
+    getFullAIPath: function(playerKey, gridMap = state.grid, oppQ = null, oppR = null) {
+        const p = state[playerKey];
+        let fullPath = [];
+        let curr = {q: p.q, r: p.r};
+        
+        for (let cp = p.cp; cp <= config.cpCount + 1; cp++) {
+            const target = cp <= config.cpCount ? state.checkpoints[playerKey][cp] : state.finish;
+            const { path } = this.runPathfinder(curr.q, curr.r, target.q, target.r, gridMap, oppQ, oppR, Infinity, true);
+            if (path.length === 0) return []; 
+            fullPath.push(...path);
+            curr = target;
+        }
+        return fullPath;
+    },
+
+    getTopNPaths: function(playerKey, N, gridMap = state.grid, maxCostAllowed = Infinity) {
+        const start = state[playerKey];
+        const target = this.getCurrentTarget(playerKey);
+        const opp = state[playerKey === 'red' ? 'blue' : 'red'];
+        
+        let paths = [];
+        let tempGrid = new Map(gridMap); 
+        
+        for (let i = 0; i < N; i++) {
+            const { cost, path } = this.runPathfinder(start.q, start.r, target.q, target.r, tempGrid, opp.q, opp.r, maxCostAllowed, true);
+            if (cost > maxCostAllowed || path.length === 0) break; 
+            
+            paths.push(path);
+            if (path.length > 1) tempGrid.set(path[Math.floor(path.length / 2)], { type: 'mountain' });
+            else break;
+        }
+        return paths;
+    },
+
+    canCompleteRace: function(grid, playerKey) {
+        const p = state[playerKey];
+        let curr = { q: p.q, r: p.r };
+
+        for (let cp = p.cp; cp <= config.cpCount + 1; cp++) {
+            const target = cp <= config.cpCount ? state.checkpoints[playerKey][cp] : state.finish;
+            const { cost } = this.runPathfinder(curr.q, curr.r, target.q, target.r, grid, null, null, Infinity, false);
+            if (cost === Infinity) return false; 
+            curr = target; 
+        }
+        return true;
+    }
+};
+
+// --- 5. Game Logic & Validation ---
+const GameLogic = {
+    getInventoryCount: (player, type) => Object.values(state[player].inventory[type]).reduce((a, b) => a + b, 0),
+
+    showToast: function(msg) {
+        const el = document.getElementById('toast');
+        el.innerText = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2500);
+    },
+
+    // Check overlaps, bounds, terrain rules (FAST)
+    checkBasicPlacementRules: function(hexes, terrainType) {
+        for (const h of hexes) {
+            const key = `${h.q},${h.r}`;
+            const existing = state.grid.get(key);
+            
+            if (!existing) return "Shape is out of bounds!";
+            if (Pathfinding.isOccupied(h.q, h.r)) return "Cannot place on top of players, start, finish, or active checkpoints!";
+
+            if (terrainType === 'path') {
+                if (existing.type !== 'clear' && existing.type !== 'forest') return "Paths can only be built over clear hexes or forests!";
+            } else {
+                if (existing.type !== 'clear') return "Mountains and Forests must be placed on entirely clear terrain!";
+            }
+        }
+        return "VALID";
+    },
+
+    // "The Golden Rule" (SLOW - Full pathfind)
+    checkGoldenRule: function(hexes, terrainType) {
+        if (terrainType !== 'mountain') return "VALID";
+
+        const mockGrid = new Map(state.grid);
+        for (const h of hexes) mockGrid.set(`${h.q},${h.r}`, { type: terrainType });
+        
+        if (!Pathfinding.canCompleteRace(mockGrid, 'red')) return "Golden Rule: You cannot permanently block Red's path to their objectives!";
+        if (!Pathfinding.canCompleteRace(mockGrid, 'blue')) return "Golden Rule: You cannot permanently block Blue's path to their objectives!";
+        return "VALID";
+    },
+
+    calculateValidMoves: function() {
+        state.validMoves.clear();
+        if (state.movesLeft <= 0) return;
+
+        const pKey = state.turn;
+        const startQ = state[pKey].q, startR = state[pKey].r;
+        const opp = state[pKey === 'red' ? 'blue' : 'red'];
+        
+        const { visited } = Pathfinding.runPathfinder(startQ, startR, null, null, state.grid, opp.q, opp.r, state.movesLeft, false);
+        
+        for (const [key, cost] of visited.entries()) {
+            if (key !== `${startQ},${startR}`) state.validMoves.set(key, { cost });
+        }
+    },
+
+    checkCourseOverlap: function(path) {
+        for (let i = 0; i < path.length - 1; i++) {
+            const p1 = MathUtils.hexToPixel(path[i].q, path[i].r, HEX_SIZE);
+            const p2 = MathUtils.hexToPixel(path[i+1].q, path[i+1].r, HEX_SIZE);
+            
+            for (let j = 0; j < path.length; j++) {
+                if (j === i || j === i + 1) continue; 
+                const pc = MathUtils.hexToPixel(path[j].q, path[j].r, HEX_SIZE);
+                if (MathUtils.pointToSegmentDistance(pc.x, pc.y, p1.x, p1.y, p2.x, p2.y) < HEX_SIZE * 0.85) {
+                    return true; 
+                }
+            }
+        }
+        return false; 
+    },
+
+    generateNewCourses: function() {
+        const outer = MathUtils.getOuterRingHexes();
+        const targetMin = GAME_TUNING.distMin[config.cpCount];
+        const targetMax = GAME_TUNING.distMax[config.cpCount];
+        
+        const innerHexes = [];
+        for (let q = -BOARD_RADIUS; q <= BOARD_RADIUS; q++) {
+            let r1 = Math.max(-BOARD_RADIUS, -q - BOARD_RADIUS);
+            let r2 = Math.min(BOARD_RADIUS, -q + BOARD_RADIUS);
+            for (let r = r1; r <= r2; r++) innerHexes.push({q, r});
+        }
+
+        let attempts = 0;
+        while (attempts < 50000) {
+            attempts++;
+            const start = outer[Math.floor(Math.random() * outer.length)];
+            const finishes = outer.filter(h => MathUtils.hexDistance(start, h) >= 1.5 * BOARD_RADIUS);
+            if(finishes.length === 0) continue;
+            const finish = finishes[Math.floor(Math.random() * finishes.length)];
+            
+            let cps = [];
+            for(let i = 0; i < config.cpCount; i++) cps.push(innerHexes[Math.floor(Math.random() * innerHexes.length)]);
+            
+            const unique = new Set([`${start.q},${start.r}`, `${finish.q},${finish.r}`, ...cps.map(c => `${c.q},${c.r}`)]);
+            if (unique.size < config.cpCount + 2) continue;
+            
+            let path = [start, ...cps, finish];
+            let dist = 0;
+            for(let i = 0; i < path.length - 1; i++) dist += MathUtils.hexDistance(path[i], path[i+1]);
+            if (dist < targetMin || dist > targetMax) continue;
+            
+            let angleOk = true;
+            for(let i = 1; i < path.length - 1; i++) {
+                if (MathUtils.angleBetween(path[i-1], path[i], path[i+1]) < GAME_TUNING.minTurnAngle) { angleOk = false; break; }
+            }
+            if (!angleOk) continue;
+            if (this.checkCourseOverlap(path)) continue;
+            
+            if (config.courseMode === 'same') {
+                state.start = start; state.finish = finish;
+                state.checkpoints.red = {}; state.checkpoints.blue = {};
+                cps.forEach((c, i) => { state.checkpoints.red[i+1] = c; state.checkpoints.blue[i+1] = c; });
+                return;
+            } else {
+                let attempts2 = 0;
+                while (attempts2 < 500) {
+                    attempts2++;
+                    let cps2 = [];
+                    for(let i = 0; i < config.cpCount; i++) cps2.push(innerHexes[Math.floor(Math.random() * innerHexes.length)]);
+                    
+                    const unique2 = new Set([`${start.q},${start.r}`, `${finish.q},${finish.r}`, ...cps2.map(c => `${c.q},${c.r}`)]);
+                    if (unique2.size < config.cpCount + 2) continue;
+                    
+                    let disjoint = true;
+                    for(let c1 of cps) {
+                        for(let c2 of cps2) {
+                            if(c1.q === c2.q && c1.r === c2.r) { disjoint = false; break; }
+                        }
+                    }
+                    if(!disjoint) continue;
+                    
+                    let path2 = [start, ...cps2, finish];
+                    let dist2 = 0;
+                    for(let i = 0; i < path2.length - 1; i++) dist2 += MathUtils.hexDistance(path2[i], path2[i+1]);
+                    if (dist2 < targetMin || dist2 > targetMax) continue;
+                    if (Math.abs(dist2 - dist) > 2) continue;
+                    
+                    let angleOk2 = true;
+                    for(let i = 1; i < path2.length - 1; i++) {
+                        if (MathUtils.angleBetween(path2[i-1], path2[i], path2[i+1]) < GAME_TUNING.minTurnAngle) { angleOk2 = false; break; }
+                    }
+                    if (!angleOk2) continue;
+                    if (this.checkCourseOverlap(path2)) continue;
+                    
+                    state.start = start; state.finish = finish;
+                    state.checkpoints.red = {}; state.checkpoints.blue = {};
+                    cps.forEach((c, i) => state.checkpoints.red[i+1] = c);
+                    cps2.forEach((c, i) => state.checkpoints.blue[i+1] = c);
+                    return;
+                }
+            }
+        }
+        
+        this.applyFallbackCourse();
+    },
+
+    // Used only when procedural generation gives up. Always writes exactly
+    // config.cpCount checkpoints so a 4- or 5-checkpoint race cannot look up
+    // a missing point.
+    applyFallbackCourse: function() {
+        const onBoard = (q, r) => Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)) <= BOARD_RADIUS;
+        const start = { q: 0, r: BOARD_RADIUS };
+        const finish = { q: 0, r: -BOARD_RADIUS };
+        const reserved = new Set([`${start.q},${start.r}`, `${finish.q},${finish.r}`]);
+
+        const take = (sign) => {
+            const cps = [];
+            for (let i = 1; i <= config.cpCount; i++) {
+                const t = i / (config.cpCount + 1);
+                const baseR = Math.round(BOARD_RADIUS - t * (BOARD_RADIUS * 2));
+                const baseQ = sign * ((i % 2) + 1);
+                let found = null;
+                for (let rad = 0; rad <= BOARD_RADIUS * 2 && !found; rad++) {
+                    for (let dq = -rad; dq <= rad && !found; dq++) {
+                        for (let dr = -rad; dr <= rad && !found; dr++) {
+                            const q = baseQ + dq;
+                            const r = baseR + dr;
+                            const key = `${q},${r}`;
+                            if (onBoard(q, r) && !reserved.has(key)) found = { q, r };
+                        }
+                    }
+                }
+                reserved.add(`${found.q},${found.r}`);
+                cps.push(found);
+            }
+            return cps;
+        };
+
+        const red = take(1);
+        const blue = config.courseMode === 'same' ? red : take(-1);
+        state.start = start;
+        state.finish = finish;
+        state.checkpoints.red = {};
+        state.checkpoints.blue = {};
+        red.forEach((c, i) => { state.checkpoints.red[i + 1] = c; });
+        blue.forEach((c, i) => { state.checkpoints.blue[i + 1] = c; });
+    },
+
+    setAction: function(actionType) {
+        if (state.winner || (state.hasMovedThisTurn && actionType === 'map')) {
+            if (actionType === 'map') this.showToast("Move already started!");
+            return;
+        }
+        state.action = actionType;
+        state.mapState.previewCenter = null;
+        Renderer.renderAll();
+    },
+
+    selectTerrain: function(type) {
+        if (this.getInventoryCount(state.turn, type) <= 0) return this.showToast(`No ${type}s left!`);
+        
+        const inv = state[state.turn].inventory[type];
+        state.mapState = {
+            selectedTerrain: type,
+            rotation: 0,
+            shapeName: Object.keys(inv).find(k => inv[k] > 0),
+            previewCenter: { ...state[state.turn] }
+        };
+        
+        if (state.mapState.previewCenter.q === state.start.q && state.mapState.previewCenter.r === state.start.r) {
+            state.mapState.previewCenter = {q: 0, r: 0};
+        }
+        Renderer.renderAll();
+    },
+
+    rotateShape: function() {
+        if (state.mapState.selectedTerrain) {
+            state.mapState.rotation = (state.mapState.rotation + 1) % 6;
+            Renderer.renderBoard();
+        }
+    },
+
+    toggleShape: function() {
+        const type = state.mapState.selectedTerrain;
+        if (type === 'path') return;
+        const inv = state[state.turn].inventory[type];
+        const shapes = Object.keys(inv).filter(k => inv[k] > 0);
+        state.mapState.shapeName = shapes[(shapes.indexOf(state.mapState.shapeName) + 1) % shapes.length];
+        Renderer.renderAll();
+    },
+
+    cancelPlacement: function() {
+        state.mapState.selectedTerrain = null;
+        Renderer.renderAll();
+    },
+
+    confirmPlacement: function() {
+        const { shapeName, rotation, previewCenter, selectedTerrain } = state.mapState;
+        if (!selectedTerrain || !previewCenter) return false;
+        
+        const hexes = SHAPE_DEFS[shapeName].map(h => {
+            const rot = MathUtils.rotateHex(h.q, h.r, rotation);
+            return { q: previewCenter.q + rot.q, r: previewCenter.r + rot.r };
+        });
+        
+        let reason = this.checkBasicPlacementRules(hexes, selectedTerrain);
+        if (reason === "VALID") reason = this.checkGoldenRule(hexes, selectedTerrain);
+
+        if (reason !== "VALID") {
+            if(state.turn !== 'blue' || !state.isAIEnabled) this.showToast(reason);
+            return false;
+        }
+        
+        const pid = `piece_${++state.pieceCounter}`;
+        for (const h of hexes) state.grid.set(`${h.q},${h.r}`, { type: selectedTerrain, pieceId: pid });
+        state[state.turn].inventory[selectedTerrain][shapeName]--;
+        if (state.turn === 'blue') state.aiTurnsSinceBuild = 0; 
+        
+        this.cancelPlacement();
+        this.endTurn();
+        return true;
+    },
+
+    executeMove: function(q, r) {
+        const player = state[state.turn];
+        const key = `${q},${r}`;
+        const moveInfo = state.validMoves.get(key);
+        
+        player.q = q; player.r = r;
+        state.movesLeft -= moveInfo.cost;
+        state.hasMovedThisTurn = true;
+        
+        const target = Pathfinding.getCurrentTarget(state.turn);
+        if (q === target.q && r === target.r) {
+            player.cp++;
+            if (player.cp > config.cpCount + 1) {
+                Renderer.renderBoard(); 
+                setTimeout(() => this.endTurn(true), 400); 
+                return;
+            }
+            this.showToast(`${state.turn.toUpperCase()} reached Checkpoint ${player.cp - 1}!`);
+        }
+        
+        if (state.movesLeft <= 0) this.endTurn();
+        else {
+            this.calculateValidMoves();
+            Renderer.renderAll();
+        }
+    },
+
+    endTurn: function(isWin = false) {
+        if (isWin) {
+            state.winner = state.turn;
+            const modal = document.getElementById('win-modal');
+            const title = document.getElementById('win-title');
+            modal.classList.add('active');
+            title.innerText = `${state.turn.toUpperCase()} WINS!`;
+            title.className = `text-4xl font-bold mb-4 brand text-${state.turn}-500`;
+            return Renderer.renderAll();
+        }
+
+        state.turn = state.turn === 'red' ? 'blue' : 'red';
+        state.action = 'move';
+        state.hasMovedThisTurn = false;
+        state.movesLeft = MAX_MP; 
+        state.aiSubMovesThisTurn = 0; 
+        
+        this.calculateValidMoves();
+        
+        document.getElementById('board-container').classList.remove('ai-thinking');
+        document.querySelector('.bottom-panel').classList.remove('ai-thinking');
+        
+        Renderer.renderAll();
+        if (state.turn === 'blue' && state.isAIEnabled) AI.trigger();
+    }
+};
+
+
+// --- 6. AI Logic ---
+const AI = {
+    trigger: function() {
+        if (!state.isAIEnabled || state.turn !== 'blue' || state.winner) return;
+
+        document.getElementById('board-container').classList.add('ai-thinking');
+        document.querySelector('.bottom-panel').classList.add('ai-thinking');
+
+        setTimeout(() => {
+            if (!state.hasMovedThisTurn) {
+                state.aiTurnsSinceBuild = (state.aiTurnsSinceBuild || 0) + 1;
+            }
+
+            const target = Pathfinding.getCurrentTarget('blue');
+            const { cost } = Pathfinding.runPathfinder(state.blue.q, state.blue.r, target.q, target.r, state.grid, state.red.q, state.red.r, state.movesLeft, false);
+            const canSecureTargetNow = cost <= state.movesLeft;
+
+            const bestPlacementData = !canSecureTargetNow ? this.evaluateBestPlacement() : null;
+            let shouldPlace = !canSecureTargetNow && this.decideToPlace(bestPlacementData);
+
+            const mistakeRate = GAME_TUNING.aiMistakeRate[state.aiDifficulty];
+            if (shouldPlace && Math.random() < mistakeRate) shouldPlace = false; 
+
+            if (!state.hasMovedThisTurn && shouldPlace) {
+                GameLogic.setAction('map');
+                GameLogic.selectTerrain(bestPlacementData.placement.selectedTerrain);
+                state.mapState = bestPlacementData.placement;
+                
+                Renderer.renderBoard();
+                setTimeout(() => GameLogic.confirmPlacement(), 600);
+            } else {
+                this.doGrandmasterMove();
+            }
+        }, 700);
+    },
+
+    evaluateBestPlacement: function() {
+        const redOpp = state.blue;
+        const blueOpp = state.red;
+        
+        let redBaseCost = Pathfinding.getFullRaceCost('red', state.grid, redOpp.q, redOpp.r);
+        let blueBaseCost = Pathfinding.getFullRaceCost('blue', state.grid, blueOpp.q, blueOpp.r);
+        if (redBaseCost === Infinity) redBaseCost = 999;
+        if (blueBaseCost === Infinity) blueBaseCost = 999;
+        
+        const fullRedPath = Pathfinding.getFullAIPath('red', state.grid, redOpp.q, redOpp.r);
+        const fullBluePath = Pathfinding.getFullAIPath('blue', state.grid, blueOpp.q, blueOpp.r);
+        
+        const redTarget = Pathfinding.getCurrentTarget('red');
+        const segmentCost = Pathfinding.runPathfinder(state.red.q, state.red.r, redTarget.q, redTarget.r, state.grid, redOpp.q, redOpp.r, Infinity, true).cost;
+        const viableThreshold = segmentCost + 4; 
+        
+        const redPathsBefore = Pathfinding.getTopNPaths('red', 3, state.grid, viableThreshold);
+        const redOptionCountBefore = redPathsBefore.length;
+
+        let candidateKeys = new Set();
+        fullRedPath.slice(0, 10).forEach(k => candidateKeys.add(k));
+        fullBluePath.slice(0, 6).forEach(k => candidateKeys.add(k));
+        
+        MathUtils.getNeighbors(redTarget.q, redTarget.r).forEach(n => {
+            const k = `${n.q},${n.r}`;
+            const existing = state.grid.get(k);
+            if(existing && (existing.type === 'clear' || existing.type === 'forest')) candidateKeys.add(k);
+        });
+
+        if (candidateKeys.size === 0) return null;
+
+        const availableTypes = ['mountain', 'forest', 'path'].filter(t => GameLogic.getInventoryCount('blue', t) > 0);
+        if (availableTypes.length === 0) return null;
+        
+        let best = null;
+        let bestScore = -Infinity;
+
+        // Sorting candidate keys to prioritize closer to opponent paths (heuristic)
+        const sortedCandidates = Array.from(candidateKeys).map(k => {
+            const [q, r] = k.split(',').map(Number);
+            return {q, r, k};
+        });
+
+        for (const type of availableTypes) {
+            const shapes = Object.keys(state.blue.inventory[type]).filter(k => state.blue.inventory[type][k] > 0);
+            for (const shapeName of shapes) {
+                for (const {q: cq, r: cr, k: keyStr} of sortedCandidates) {
+                    
+                    if (type !== 'path') {
+                        const blueDist = MathUtils.hexDistance({ q: cq, r: cr }, state.blue);
+                        const redDist = MathUtils.hexDistance({ q: cq, r: cr }, state.red);
+                        if (blueDist < redDist) continue; 
+                    }
+
+                    for (let rot = 0; rot < 6; rot++) {
+                        const hexes = SHAPE_DEFS[shapeName].map(h => {
+                            const rHex = MathUtils.rotateHex(h.q, h.r, rot);
+                            return { q: cq + rHex.q, r: cr + rHex.r };
+                        });
+                        
+                        if (GameLogic.checkBasicPlacementRules(hexes, type) !== "VALID") continue;
+                        if (GameLogic.checkGoldenRule(hexes, type) !== "VALID") continue;
+
+                        const mockGrid = new Map(state.grid);
+                        let maliciousBonus = 0;
+
+                        for (const h of hexes) {
+                            const k = `${h.q},${h.r}`;
+                            mockGrid.set(k, { type });
+                            
+                            if (type === 'forest') {
+                                const redTargetNeighbors = MathUtils.getNeighbors(redTarget.q, redTarget.r);
+                                if (redTargetNeighbors.some(n => n.q === h.q && n.r === h.r)) maliciousBonus += 2.0; 
+                            }
+                            if ((type === 'mountain' || type === 'forest') && fullRedPath.includes(k)) maliciousBonus += 2.0; 
+                        }
+
+                        let newRedCost = Pathfinding.getFullRaceCost('red', mockGrid, redOpp.q, redOpp.r);
+                        let newBlueCost = Pathfinding.getFullRaceCost('blue', mockGrid, blueOpp.q, blueOpp.r);
+                        
+                        if (newRedCost === Infinity) newRedCost = 999;
+                        if (newBlueCost === Infinity) newBlueCost = 999;
+                        
+                        if (newBlueCost > blueBaseCost + 0.5) continue;
+                        
+                        const deltaRed = newRedCost - redBaseCost;
+                        const deltaBlue = blueBaseCost - newBlueCost;
+                        const chokeBonus = Math.max(0, deltaRed) * 2;
+                        let netScore = (deltaRed * 1.4) + (deltaBlue * 0.8) + maliciousBonus + chokeBonus;
+
+                        const redPathsAfter = Pathfinding.getTopNPaths('red', 3, mockGrid, viableThreshold);
+                        const optionLoss = redOptionCountBefore - redPathsAfter.length;
+
+                        if ((deltaRed > 0 || deltaBlue > 0 || maliciousBonus > 0 || optionLoss > 0) && netScore > bestScore) {
+                            bestScore = netScore;
+                            best = { placement: { selectedTerrain: type, rotation: rot, shapeName, previewCenter: {q:cq, r:cr} }, deltaRed, deltaBlue, netScore, maliciousBonus, optionLoss };
+                        }
+
+                        // Early exit if found a great move (performance optimization)
+                        if (bestScore > GAME_TUNING.aiGoodEnoughScore) return best;
+                    }
+                }
+            }
+        }
+        return best;
+    },
+
+    decideToPlace: function(evalResult) {
+        if (!evalResult) return false;
+
+        const totalInv = GameLogic.getInventoryCount('blue', 'mountain') + GameLogic.getInventoryCount('blue', 'forest') + GameLogic.getInventoryCount('blue', 'path');
+        if (totalInv === 0) return false;
+
+        const redBaseCost = Pathfinding.getFullRaceCost('red', state.grid, state.blue.q, state.blue.r);
+        const blueBaseCost = Pathfinding.getFullRaceCost('blue', state.grid, state.red.q, state.red.r);
+        const tempo = redBaseCost - blueBaseCost;
+        
+        const redTarget = Pathfinding.getCurrentTarget('red');
+        const redSegmentCost = Pathfinding.runPathfinder(state.red.q, state.red.r, redTarget.q, redTarget.r, state.grid, state.blue.q, state.blue.r, Infinity, true).cost;
+        const isEmergency = redSegmentCost <= 4; 
+
+        if (blueBaseCost + 1 < redBaseCost) return false;
+        if (tempo > 1.5 && evalResult.deltaRed < 2) return false;
+
+        const gamePhase = Math.max(state.red.cp, state.blue.cp);
+        const reserve = gamePhase < config.cpCount ? 2 : 0;
+        if (totalInv <= reserve && !isEmergency && evalResult.netScore < 5.0) return false;
+
+        if (evalResult.optionLoss <= 0 && !isEmergency && evalResult.deltaBlue <= 0) return false;
+        if (evalResult.deltaRed < 0.5 && evalResult.deltaBlue < 0.3 && evalResult.maliciousBonus === 0) return false;
+        if (state.aiTurnsSinceBuild < 2 && evalResult.netScore < 2.0) return false;
+
+        let threshold = 1.0; 
+        if (totalInv <= 3) threshold += 1.0;
+        if (tempo < 0 || state.red.cp > state.blue.cp) threshold -= 1.0; 
+        if (redSegmentCost <= 4) threshold -= 2.0; 
+
+        if (evalResult.deltaRed >= 2.5) return true; 
+        if (evalResult.maliciousBonus >= 2.0 && evalResult.netScore >= -1.0) return true; 
+
+        return evalResult.netScore >= threshold;
+    },
+
+    doGrandmasterMove: function() {
+        GameLogic.setAction('move');
+        GameLogic.calculateValidMoves();
+
+        if (state.validMoves.size === 0) return GameLogic.endTurn(); 
+        
+        state.aiSubMovesThisTurn++;
+        if (state.aiSubMovesThisTurn > GAME_TUNING.aiMaxSubMoves) return GameLogic.endTurn(); 
+
+        const target = Pathfinding.getCurrentTarget('blue');
+        let bestMove = null;
+        
+        const startQ = state.blue.q, startR = state.blue.r;
+        let currentCostToTarget = Pathfinding.runPathfinder(startQ, startR, target.q, target.r, state.grid, state.red.q, state.red.r, Infinity, true).cost;
+        let bestCostToTarget = currentCostToTarget;
+        
+        let fallbackMove = null;
+        let currentFallbackCost = Pathfinding.runPathfinder(startQ, startR, target.q, target.r, state.grid, null, null, Infinity, true).cost;
+        let fallbackCostToTarget = currentFallbackCost;
+
+        const redBaseCost = Pathfinding.getFullRaceCost('red', state.grid, state.blue.q, state.blue.r);
+        const blueBaseCost = Pathfinding.getFullRaceCost('blue', state.grid, state.red.q, state.red.r);
+        const tempo = redBaseCost - blueBaseCost;
+        
+        const isSprinting = tempo > 1.0;
+        let canReachTargetThisTurn = false;
+
+        for (const [key, moveInfo] of state.validMoves.entries()) {
+            const [q, r] = key.split(',').map(Number);
+            if (q === target.q && r === target.r) { 
+                bestMove = {q, r}; 
+                fallbackMove = {q, r};
+                canReachTargetThisTurn = true;
+                break; 
+            }
+
+            const pathCost = Pathfinding.runPathfinder(q, r, target.q, target.r, state.grid, state.red.q, state.red.r, Infinity, true).cost;
+            if (pathCost !== Infinity) {
+                const totalCost = pathCost + (moveInfo.cost * 0.1);
+                if (totalCost < bestCostToTarget || (totalCost === bestCostToTarget && moveInfo.cost === 0)) {
+                    bestCostToTarget = totalCost;
+                    bestMove = {q, r};
+                }
+            }
+            
+            const fPathCost = Pathfinding.runPathfinder(q, r, target.q, target.r, state.grid, null, null, Infinity, true).cost;
+            if (fPathCost !== Infinity) {
+                const fTotalCost = fPathCost + (moveInfo.cost * 0.1);
+                if (fTotalCost < fallbackCostToTarget || (fTotalCost === fallbackCostToTarget && moveInfo.cost === 0)) {
+                    fallbackCostToTarget = fTotalCost;
+                    fallbackMove = {q, r};
+                }
+            }
+        }
+
+        if (!canReachTargetThisTurn && !isSprinting && currentCostToTarget !== Infinity) {
+            const redTarget = Pathfinding.getCurrentTarget('red');
+            const redNextPath = Pathfinding.runPathfinder(state.red.q, state.red.r, redTarget.q, redTarget.r, state.grid, state.blue.q, state.blue.r, Infinity, true).path;
+            
+            for (const [key, moveInfo] of state.validMoves.entries()) {
+                if (redNextPath.includes(key)) {
+                    const [q, r] = key.split(',').map(Number);
+                    if (state.red.q === q && state.red.r === r) continue; 
+                    
+                    const pathCost = Pathfinding.runPathfinder(q, r, target.q, target.r, state.grid, state.red.q, state.red.r, Infinity, true).cost;
+                    const totalCost = pathCost + (moveInfo.cost * 0.1);
+                    
+                    if (totalCost <= currentCostToTarget + 0.5) {
+                        bestMove = { q, r };
+                        bestCostToTarget = totalCost;
+                        break; 
+                    }
+                }
+            }
+        }
+
+        if (!bestMove) { 
+            if (currentCostToTarget === Infinity && fallbackMove) bestMove = fallbackMove;
+            else return GameLogic.endTurn();
+        }
+
+        const mistakeRate = GAME_TUNING.aiMistakeRate[state.aiDifficulty];
+        if (Math.random() < mistakeRate) {
+            const movesArray = Array.from(state.validMoves.keys());
+            if (movesArray.length > 1) {
+                const bestKey = `${bestMove.q},${bestMove.r}`;
+                const badMoves = movesArray.filter(k => k !== bestKey);
+                if (badMoves.length > 0) {
+                    const randKey = badMoves[Math.floor(Math.random() * badMoves.length)];
+                    const [q, r] = randKey.split(',').map(Number);
+                    bestMove = {q, r};
+                }
+            }
+        }
+
+        GameLogic.executeMove(bestMove.q, bestMove.r);
+
+        if (state.turn === 'blue' && !state.winner) {
+            setTimeout(() => this.doGrandmasterMove(), 600);
+        }
+    }
+};
+
+// --- 7. Rendering Engine & Event Delegation ---
+const Renderer = {
+    renderBoard: function() {
+        const getEl = id => document.getElementById(id);
+        let gridHTML = '', moveDotsHTML = '', dirHTML = '', cpHTML = '', overlaysHTML = '', prevHTML = '';
+
+        for (const [key, data] of state.grid.entries()) {
+            const [q, r] = key.split(',').map(Number);
+            const {x, y} = MathUtils.hexToPixel(q, r, HEX_SIZE);
+            const pts = MathUtils.getHexPolygon(HEX_SIZE);
+            
+            let cls = `hex hex-${data.type}`;
+            // Removed inline onclick, injected data-q and data-r for event delegation
+            gridHTML += `<polygon points="${pts}" transform="translate(${x},${y})" class="${cls}" data-q="${q}" data-r="${r}" />`;
+            if (data.type === 'mountain') gridHTML += `<polygon points="${MathUtils.getHexPolygon(HEX_SIZE * GAME_TUNING.mountainScale)}" transform="translate(${x},${y})" fill="#334155" pointer-events="none" />`;
+        }
+
+        if (state.action === 'move') {
+            for (const [key, _] of state.validMoves.entries()) {
+                const [q, r] = key.split(',').map(Number);
+                const {x, y} = MathUtils.hexToPixel(q, r, HEX_SIZE);
+                const fill = state.turn === 'red' ? 'var(--red-player)' : 'var(--blue-player)';
+                moveDotsHTML += `<circle cx="${x}" cy="${y}" r="2.5" fill="${fill}" class="animate-pulse" pointer-events="none" />`;
+            }
+        }
+
+        ['red', 'blue'].forEach(pKey => {
+            const p = state[pKey];
+            const color = pKey === 'red' ? '#ef4444' : '#3b82f6';
+            let {x: rX, y: rY} = MathUtils.hexToPixel(p.q, p.r, HEX_SIZE);
+            
+            if (state.red.q === state.blue.q && state.red.r === state.blue.r) rX += (pKey === 'red' ? -3.5 : 3.5);
+            
+            const nodes = [{x: rX, y: rY, r: 4.5}];
+            for (let c = p.cp; c <= config.cpCount; c++) nodes.push({...MathUtils.hexToPixel(state.checkpoints[pKey][c].q, state.checkpoints[pKey][c].r, HEX_SIZE), r: c === p.cp ? 7 : 5});
+            if (p.cp <= config.cpCount + 1) nodes.push({...MathUtils.hexToPixel(state.finish.q, state.finish.r, HEX_SIZE), r: 8});
+            
+            for (let i = 0; i < nodes.length - 1; i++) {
+                const edgeLine = MathUtils.getEdgeAdjustedLine(nodes[i].x, nodes[i].y, nodes[i+1].x, nodes[i+1].y, nodes[i].r + 1.5, nodes[i+1].r + 1.5);
+                if (!edgeLine) continue;
+                
+                if (i === 0 && pKey === state.turn && state.action === 'move') {
+                    dirHTML += `<line x1="${edgeLine.x1}" y1="${edgeLine.y1}" x2="${edgeLine.x2}" y2="${edgeLine.y2}" stroke="${color}" stroke-width="2" class="dash-anim" opacity="0.8" pointer-events="none" stroke-linecap="round" />`;
+                } else {
+                    dirHTML += `<line x1="${edgeLine.x1}" y1="${edgeLine.y1}" x2="${edgeLine.x2}" y2="${edgeLine.y2}" stroke="${color}" stroke-width="1.5" stroke-dasharray="2 4" opacity="0.25" pointer-events="none" stroke-linecap="round" />`;
+                }
+            }
+        });
+
+        const drawCP = (pKey, num, {q, r}) => {
+            if (state[pKey].cp > num) return;
+            const {x, y} = MathUtils.hexToPixel(q, r, HEX_SIZE);
+            const col = pKey === 'red' ? '#ef4444' : '#3b82f6';
+            const isActive = state[pKey].cp === num;
+            cpHTML += `<circle cx="${x}" cy="${y}" r="${isActive ? 7 : 5}" fill="none" stroke="${col}" stroke-width="${isActive ? 2 : 1.5}" opacity="${isActive ? 1 : 0.5}" pointer-events="none"/>
+                       <text x="${x + (isActive?7:5) + 1.5}" y="${y - (isActive?7:5) + 3}" font-family="Orbitron" font-size="${isActive ? 6 : 4.5}" fill="${col}" font-weight="bold" opacity="${isActive ? 1 : 0.5}" pointer-events="none">${num}</text>`;
+        };
+        for(let i=1; i<=config.cpCount; i++) {
+            drawCP('red', i, state.checkpoints.red[i]);
+            drawCP('blue', i, state.checkpoints.blue[i]);
+        }
+
+        const drawOverlay = (q, r, content) => {
+            const {x, y} = MathUtils.hexToPixel(q, r, HEX_SIZE);
+            overlaysHTML += `<g transform="translate(${x},${y})" pointer-events="none">${content}</g>`;
+        }
+        
+        drawOverlay(state.start.q, state.start.r, `<polygon points="0,-8 -7,4 7,4" fill="none" stroke="#ffffff" stroke-width="2"/><text y="16" font-size="4" fill="#f8fafc" font-weight="bold" font-family="Orbitron" text-anchor="middle">START</text>`);
+        drawOverlay(state.finish.q, state.finish.r, `<circle r="8" fill="none" stroke="#ffffff" stroke-width="2"/><circle r="4" fill="none" stroke="#ffffff" stroke-width="2"/><text y="-14" font-size="4" fill="#f8fafc" font-weight="bold" font-family="Orbitron" text-anchor="middle">FINISH</text>`);
+
+        if (state.action === 'map' && state.mapState.shapeName && state.mapState.previewCenter) {
+            const hexes = SHAPE_DEFS[state.mapState.shapeName].map(h => {
+                const rot = MathUtils.rotateHex(h.q, h.r, state.mapState.rotation);
+                return { q: state.mapState.previewCenter.q + rot.q, r: state.mapState.previewCenter.r + rot.r };
+            });
+            
+            // Only perform fast check during preview frame rendering
+            const cClass = GameLogic.checkBasicPlacementRules(hexes, state.mapState.selectedTerrain) === "VALID" ? 'hex-preview-valid' : 'hex-preview-invalid';
+            hexes.forEach(h => {
+                const {x, y} = MathUtils.hexToPixel(h.q, h.r, HEX_SIZE);
+                prevHTML += `<polygon points="${MathUtils.getHexPolygon(HEX_SIZE * 0.9)}" transform="translate(${x},${y})" class="${cClass}" pointer-events="none" />`;
+            });
+        }
+
+        getEl('hex-grid').innerHTML = gridHTML;
+        getEl('move-dots-layer').innerHTML = moveDotsHTML;
+        getEl('direction-layer').innerHTML = dirHTML;
+        getEl('checkpoints-layer').innerHTML = cpHTML;
+        getEl('overlays-layer').innerHTML = overlaysHTML;
+        getEl('preview-layer').innerHTML = prevHTML;
+
+        let {x: rx, y: ry} = MathUtils.hexToPixel(state.red.q, state.red.r, HEX_SIZE);
+        let {x: bx, y: by} = MathUtils.hexToPixel(state.blue.q, state.blue.r, HEX_SIZE);
+        
+        if (state.red.q === state.blue.q && state.red.r === state.blue.r) { 
+            rx -= 3.5; 
+            bx += 3.5; 
+        }
+        
+        getEl('runner-red').setAttribute('cx', rx);
+        getEl('runner-red').setAttribute('cy', ry);
+        getEl('runner-blue').setAttribute('cx', bx);
+        getEl('runner-blue').setAttribute('cy', by);
+    },
+
+    updateUI: function() {
+        const isRed = state.turn === 'red';
+        
+        const turnInd = document.getElementById('turn-indicator');
+        turnInd.className = `flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold text-xs sm:text-sm btn-action border shadow-lg transition-colors ${isRed ? 'bg-red-900 text-red-200 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'bg-blue-900 text-blue-200 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]'}`;
+        document.getElementById('turn-dot').className = `w-2 h-2 sm:w-3 sm:h-3 rounded-full animate-pulse ${isRed ? 'bg-red-500' : 'bg-blue-500'}`;
+        document.getElementById('turn-text').innerText = `${state.turn.toUpperCase()}'S TURN`;
+        
+        const tabMove = document.getElementById('tab-move');
+        const tabMap = document.getElementById('tab-map');
+        const ctxMove = document.getElementById('context-move');
+        const ctxMap = document.getElementById('context-map');
+        
+        const activeCls = 'border-slate-500 bg-slate-700 text-white';
+        const inactiveCls = 'border-slate-700 bg-slate-800 text-slate-500';
+        
+        tabMap.className = `flex-1 py-2 rounded font-bold text-center border-2 transition-colors ${state.action === 'map' ? activeCls : inactiveCls} ${state.hasMovedThisTurn ? 'opacity-50 cursor-not-allowed' : ''}`;
+        tabMove.className = `flex-1 py-2 rounded font-bold text-center border-2 transition-colors ${state.action === 'move' ? activeCls : inactiveCls}`;
+        
+        if (state.action === 'move') {
+            ctxMap.classList.add('hidden');
+            ctxMove.classList.remove('hidden');
+            
+            ctxMove.innerHTML = `
+                ${!state.hasMovedThisTurn ? 'Tap a dot to move.' : `<span class="text-white font-bold">${state.movesLeft} MP Remaining.</span>`}
+                <span class="text-xs text-slate-400 block mt-1">Cost: Clear (1 MP), Forest (2 MP), Path (0 MP). Limit: 2 MP.</span>
+                ${(state.hasMovedThisTurn || state.movesLeft < MAX_MP) && state.movesLeft >= 0 ? `<button onclick="GameLogic.endTurn()" class="mt-1 px-4 py-1 bg-red-700 hover:bg-red-600 rounded text-white text-xs font-bold transition-colors">END TURN EARLY</button>` : ''}
+            `;
+        } else {
+            ctxMove.classList.add('hidden');
+            ctxMap.classList.remove('hidden');
+            
+            ['mountain', 'forest', 'path'].forEach(t => document.getElementById(`inv-${t}`).innerText = GameLogic.getInventoryCount(state.turn, t));
+            
+            const showControls = !!state.mapState.selectedTerrain;
+            document.getElementById('inventory-selection').classList.toggle('hidden', showControls);
+            document.getElementById('placement-controls').classList.toggle('hidden', !showControls);
+            
+            const shapeBtn = document.getElementById('btn-shape');
+            if (showControls && state.mapState.selectedTerrain !== 'path') {
+                shapeBtn.classList.remove('hidden');
+                shapeBtn.innerText = `▨ ${SHAPE_LABELS[state.mapState.shapeName] || 'SHAPE'}`;
+            } else {
+                shapeBtn.classList.add('hidden');
+            }
+        }
+    },
+
+    renderAll: function() { this.updateUI(); this.renderBoard(); }
+};
+
+// --- 8. Event Delegation Setup ---
+document.getElementById('hex-grid').addEventListener('click', (e) => {
+    const polygon = e.target.closest('.hex');
+    if (!polygon) return;
+    
+    const q = parseInt(polygon.getAttribute('data-q'));
+    const r = parseInt(polygon.getAttribute('data-r'));
+    
+    if (state.action === 'move') {
+        if (state.validMoves.has(`${q},${r}`)) GameLogic.executeMove(q, r);
+    } else if (state.action === 'map' && state.mapState.selectedTerrain) {
+        state.mapState.previewCenter = {q, r};
+        Renderer.renderBoard();
+    }
+});
+
+// --- Boot ---
+GameLogic.generateNewCourses();
+GameLogic.calculateValidMoves();
+Renderer.renderAll();
+
+</script>
+</body>
+</html>

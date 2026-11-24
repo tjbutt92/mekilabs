@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hex Links | Meki Labs</title>
+  <meta name="description" content="One shot. Closest to the pin wins. Pick your club, shape your shot, and outsmart the wind on a hex-grid golf course.">
+  <meta property="og:title" content="Hex Links | Meki Labs">
+  <meta property="og:description" content="One shot. Closest to the pin wins. Pick your club, shape your shot, and outsmart the wind on a hex-grid golf course.">
+  <meta property="og:image" content="https://mekilabs.com/icons/hex-links-banner.png">
+  <meta property="og:url" content="https://mekilabs.com/hex-links.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="icons/hex-links-icon.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Ink and Paper Theme Variables */
+      --ink: #3e3a35;
+      --paper: #f4edd8;
+      --paper-grid: #e4dac1;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Kalam', 'Comic Sans MS', cursive, sans-serif;
+      background-color: var(--paper);
+      background-image: 
+        linear-gradient(var(--paper-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--paper-grid) 1px, transparent 1px);
+      background-size: 20px 20px;
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .sketch-box {
+      background: #fdfbf7;
+      border: 2px solid var(--ink);
+      box-shadow: 4px 4px 0px rgba(62, 58, 53, 0.2);
+      border-radius: 3px 8px 4px 6px / 6px 3px 8px 4px;
+    }
+
+    /* --- Landing Screen Styles --- */
+    #landing-screen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100dvh;
+      padding: 10px 20px;
+      width: 100%;
+      box-sizing: border-box;
+      position: absolute;
+      z-index: 500;
+      background-color: var(--paper);
+      background-image: 
+        linear-gradient(var(--paper-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--paper-grid) 1px, transparent 1px);
+      background-size: 20px 20px;
+      overflow-y: auto;
+    }
+
+    #game-screen {
+      display: none; 
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+
+    .landing-title {
+      font-size: 48px; /* Slightly smaller */
+      text-align: center;
+      margin: 0 0 5px 0;
+      color: var(--ink);
+      text-shadow: 3px 3px 0px rgba(62, 58, 53, 0.15);
+      line-height: 1;
+      transform: rotate(-2deg);
+    }
+
+    .menu-box {
+      padding: 15px; /* Tighter padding */
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px; /* Tighter gap */
+      margin-bottom: 15px;
+    }
+
+    .menu-section { display: flex; flex-direction: column; gap: 6px; }
+    .menu-label { font-size: 18px; font-weight: bold; border-bottom: 2px dashed #ccc; padding-bottom: 2px; text-align: center; }
+    
+    .stepper-group { display: flex; justify-content: space-between; align-items: center; font-size: 22px; font-weight: bold; padding: 0; }
+    .stepper-btn { width: 36px; height: 36px; font-size: 22px; border-radius: 4px 8px 3px 6px; line-height: 1; padding: 0; }
+
+    /* Lobby Slot Styles */
+    .slot-row { display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+    .slot-input { flex: 1; padding: 4px 6px; font-family: inherit; font-size: 15px; border: 2px solid var(--ink); border-radius: 4px; background: #fff; box-sizing: border-box; font-weight: bold; width: 100%;}
+    select.slot-input { appearance: none; cursor: pointer; text-align: center; }
+    .slot-color { width: 36px; height: 32px; padding: 0; border: 2px solid var(--ink); border-radius: 4px; cursor: pointer; flex-shrink: 0; background: none;}
+
+    /* --- Game UI Styles --- */
+    .hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 15px 15px 0 15px;
+      z-index: 10;
+      gap: 10px;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    .hud > * { pointer-events: auto; }
+
+    .hud-left { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+
+    #wind-display { padding: 6px 12px; font-weight: bold; font-size: 15px; height: fit-content; white-space: nowrap; transition: color 0.3s; }
+    .wind-text { margin: 0; }
+    #score-display { padding: 6px 12px; font-weight: bold; display: flex; gap: 12px; font-size: 18px; height: fit-content; align-items: center; }
+
+    #turn-banner {
+      padding: 6px 12px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      width: fit-content;
+      height: fit-content;
+      margin: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    #btn-scorecard, #btn-tutorial {
+      background: transparent; color: var(--ink); border: 2px solid var(--ink);
+      border-radius: 2px 6px 3px 5px / 5px 3px 6px 2px; padding: 2px 8px; font-size: 18px; font-family: inherit; cursor: pointer;
+    }
+    #btn-scorecard:hover, #btn-tutorial:hover { background: #e4dac1; }
+
+    #scorecard-modal, #tutorial-modal {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(62, 58, 53, 0.6); display: none; justify-content: center; align-items: center; z-index: 200;
+    }
+
+    .scorecard-content { padding: 20px; width: 95%; max-width: 500px; max-height: 80vh; overflow-y: auto; transform: rotate(1deg); pointer-events: auto; }
+    .scorecard-table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: center; font-size: 16px; }
+    .scorecard-table th, .scorecard-table td { padding: 6px; border-bottom: 2px dashed #ccc; }
+    .scorecard-table th { font-weight: bold; font-size: 18px; }
+    
+    .close-btn { background: #d32f2f; color: white; border: 2px solid var(--ink); padding: 8px; width: 100%; margin-top: 20px; font-weight: bold; font-size: 18px; cursor: pointer; font-family: inherit; transition: background 0.2s; }
+
+    main { 
+      position: absolute; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      z-index: 1; 
+    }
+    
+    svg { 
+        width: 100%; 
+        height: 100%; 
+        touch-action: none; 
+        cursor: grab;
+    }
+    svg:active { cursor: grabbing; }
+    
+    .hex { stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; cursor: pointer; transition: filter 0.2s; }
+    .hex:hover { filter: brightness(1.05); }
+    
+    .player-highlight { opacity: 0.8 !important; }
+
+    footer { 
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 8px 15px 15px 15px; 
+      z-index: 10; 
+      background: transparent; 
+      border-top: none; 
+      box-sizing: border-box;
+      pointer-events: none; 
+    }
+    footer > * { pointer-events: auto; }
+
+    .control-panel { display: flex; justify-content: space-around; margin-bottom: 8px; }
+    .control-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .control-label { font-size: 13px; font-weight: bold; display: flex; align-items: center; background: #fdfbf7; padding: 2px 8px; border: 1.5px solid var(--ink); border-radius: 4px; box-shadow: 2px 2px 0px rgba(62, 58, 53, 0.15); transform: rotate(-1deg); }
+    .footer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; padding-bottom: 0; border-bottom: none; }
+    .club-badge { background: #e4dac1; border: 2px solid var(--ink); padding: 2px 10px; font-size: 15px; font-weight: bold; transform: rotate(-2deg); }
+    
+    .btn-group { display: flex; gap: 4px; }
+    
+    .icon-btn { font-family: inherit; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; font-size: 18px; font-weight: bold; background: #fdfbf7; color: var(--ink); cursor: pointer; }
+    .icon-btn.active { background: var(--ink); color: #fdfbf7; transform: translate(2px, 2px); }
+    .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #999; background: transparent; }
+    .icon-btn svg {pointer-events: none;}
+
+    .shot-ranges { display: flex; gap: 12px; font-size: 14px; font-weight: bold; margin-top: 0; border: 2px dashed var(--ink); padding: 2px 10px; transform: rotate(1deg); background: #fdfbf7; box-shadow: 2px 2px 0px rgba(62, 58, 53, 0.15); }
+    .text-bounce { color: #d84315; }
+    .text-roll { color: #1b5e20; }
+
+    .row { display: flex; justify-content: space-between; gap: 10px; }
+    .btn-action { width: 100%; background: var(--btn-color, var(--ink)); color: #fdfbf7; padding: 10px; font-size: 18px; font-family: inherit; border: none; font-weight: bold; cursor: pointer; border-radius: 4px 8px 3px 6px; box-shadow: 4px 4px 0px rgba(0,0,0,0.2); transition: background 0.2s;}
+    .btn-action:disabled { background: transparent !important; color: #999; border: 2px dashed #999; box-shadow: none; cursor: not-allowed; }
+    
+    #status-overlay { position: absolute; width: max-content; padding: 10px 16px; pointer-events: none; display: none; z-index: 50; transition: all 0.3s ease; }
+    .stat-note { font-size: 16px; color: #555; text-align: center; margin-top: 4px; }
+    .player-stat-row { display: flex; justify-content: space-between; align-items: center; gap: 15px; border-bottom: 1px dashed #ccc; padding: 6px 0; font-weight: bold;}
+    .player-stat-row:last-child { border-bottom: none; }
+    .intent-review { font-size: 14px; color: var(--ink); background: #e4dac1; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--ink); display: inline-flex; align-items: center; gap: 2px; margin-left: 6px;}
+
+    /* --- Editor Styles --- */
+    #editor-toolbar {
+      position: absolute; top: 0; left: 0; width: 100%; padding: 10px 15px; z-index: 20; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; background: rgba(244, 237, 216, 0.95); border-bottom: 2px dashed var(--ink); box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Landing Screen -->
+  <div id="landing-screen">
+    <h1 class="landing-title">Hex Links</h1>
+    <h2 style="margin-top: 0px; margin-bottom: 10px; color: #555; text-align: center; font-size: 16px; transform: rotate(1deg);">One Shot. Closest to the Pin Wins.</h2>
+
+    <div class="menu-box sketch-box">
+      <!-- MAP & HOLES COMBINED ROW -->
+      <div style="display: flex; gap: 15px; align-items: flex-end;">
+        <div class="menu-section" style="flex: 2;">
+          <div class="menu-label">Map</div>
+          <select id="lobby-map-select" class="slot-input" style="font-size: 15px; padding: 6px;">
+            <!-- Rendered by JS -->
+          </select>
+        </div>
+        <div class="menu-section" style="flex: 1;">
+          <div class="menu-label">Holes</div>
+          <div class="stepper-group">
+            <button class="icon-btn sketch-box stepper-btn" data-action="updateLobbyHoles" data-val="-1">-</button>
+            <span id="lobby-holes">3</span>
+            <button class="icon-btn sketch-box stepper-btn" data-action="updateLobbyHoles" data-val="1">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAYERS -->
+      <div class="menu-section" style="margin-top: 5px;">
+        <div class="menu-label">Players</div>
+        <div id="lobby-slots-container" style="display: flex; flex-direction: column; gap: 4px;">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px; width: 100%; max-width: 380px;">
+        <button class="btn-action" style="flex: 2; font-size: 22px; padding: 12px; background: #2e7d32;" data-action="startRound">Tee Off</button>
+        <button class="btn-action" style="flex: 1; font-size: 16px; padding: 12px; background: #5d4037;" data-action="startEditor">Map Editor</button>
+        <button class="btn-action" style="flex: 0.5; font-size: 18px; padding: 12px; background: #0288d1;" data-action="showTutorial">?</button>
+    </div>
+  </div>
+
+  <!-- Main Game / Editor Screen -->
+  <div id="game-screen">
+    <!-- Game HUD -->
+    <div id="game-hud" class="hud">
+      <div class="hud-left">
+        <div id="wind-display" class="sketch-box"><span id="ui-wind" class="wind-text">Loading...</span></div>
+        <div id="turn-banner" class="sketch-box">P1</div>
+      </div>
+      <div id="score-display" class="sketch-box">
+        <span style="color: #d32f2f;">⚑</span><span id="ui-hole">1</span>
+        <span style="color: #999; font-weight: normal;">|</span><span id="ui-yds">0</span>y
+        <button id="btn-tutorial" data-action="showTutorial" title="How to Play">❓</button>
+        <button id="btn-scorecard" data-action="toggleScorecard" title="View Scorecard">🗒️</button>
+      </div>
+    </div>
+
+    <!-- Map Editor Toolbar -->
+    <div id="editor-toolbar" style="display: none;">
+      <div class="btn-group">
+        <button id="btn-edit-terrain" class="icon-btn sketch-box active" data-action="editorSetMode" data-val="terrain" style="width:auto; padding: 0 10px;">Terrain</button>
+        <button id="btn-edit-arrow" class="icon-btn sketch-box" data-action="editorSetMode" data-val="arrow" style="width:auto; padding: 0 10px;">Arrows</button>
+      </div>
+      <div class="btn-group">
+        <button class="icon-btn sketch-box" data-action="editorExport" style="width:auto; padding: 0 10px;">Export</button>
+        <button class="icon-btn sketch-box" data-action="editorExit" style="width:auto; padding: 0 10px; background: #d32f2f; color: white;">Exit</button>
+      </div>
+    </div>
+
+    <main>
+      <div id="status-overlay" class="sketch-box">
+        <div id="overlay-content"></div>
+      </div>
+      
+      <svg id="hex-grid" viewBox="0 0 500 550" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="pat-rough" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)"><rect width="10" height="10" fill="#a8c686"/><path d="M0,5 l10,0 M5,0 l0,10" stroke="#7a9d54" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/></pattern>
+          <pattern id="pat-fairway" patternUnits="userSpaceOnUse" width="12" height="12" patternTransform="rotate(-15)"><rect width="12" height="12" fill="#c5e1a5"/><line x1="0" y1="6" x2="12" y2="6" stroke="#9ccc65" stroke-width="2" opacity="0.5"/></pattern>
+          <pattern id="pat-green" patternUnits="userSpaceOnUse" width="6" height="6"><rect width="6" height="6" fill="#e1eed3"/><circle cx="2" cy="2" r="0.8" fill="#aed581" opacity="0.7"/><circle cx="5" cy="4" r="0.5" fill="#aed581" opacity="0.7"/></pattern>
+          <pattern id="pat-sand" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="#fcf4cb"/><circle cx="2" cy="2" r="1" fill="#e0c265" opacity="0.8"/><circle cx="6" cy="5" r="0.8" fill="#e0c265" opacity="0.6"/><circle cx="3" cy="7" r="0.5" fill="#e0c265" opacity="0.7"/></pattern>
+          <pattern id="pat-water" patternUnits="userSpaceOnUse" width="16" height="8"><rect width="16" height="8" fill="#b3e5fc"/><path d="M0,4 Q4,0 8,4 T16,4" fill="none" stroke="#4fc3f7" stroke-width="1.5" stroke-linecap="round"/></pattern>
+          <pattern id="pat-ob" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)"><rect width="8" height="8" fill="#eeeeee"/><line x1="0" y1="0" x2="0" y2="8" stroke="#bdbdbd" stroke-width="2"/></pattern>
+          <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,1 L4,3 L0,5" fill="none" stroke="#388e3c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+        </defs>
+        
+        <g id="grid-layer"></g>
+        <g id="highlight-layer" style="pointer-events: none;"></g>
+        <g id="icon-layer" style="pointer-events: none;"></g>
+        <g id="path-layer" style="pointer-events: none;"></g>
+      </svg>
+    </main>
+
+    <footer id="game-footer">
+      <div class="footer-top">
+        <div id="ui-club-display" class="club-badge sketch-box">🏌️ IRON</div>
+        <div class="shot-ranges">
+          <div class="text-bounce">Bnc: <span id="ui-bounce">0-1</span></div>
+          <div class="text-roll">Roll: <span id="ui-roll">1-2</span></div>
+        </div>
+      </div>
+      <div class="control-panel">
+        <div class="control-col">
+          <div class="control-label">Shape</div>
+          <div class="btn-group">
+            <button id="btn-shape-hardleft" class="icon-btn sketch-box" data-action="setShape" data-val="HardLeft">⇇</button>
+            <button id="btn-shape-slightleft" class="icon-btn sketch-box" data-action="setShape" data-val="SlightLeft">←</button>
+            <button id="btn-shape-straight" class="icon-btn sketch-box active" data-action="setShape" data-val="Straight">↑</button>
+            <button id="btn-shape-slightright" class="icon-btn sketch-box" data-action="setShape" data-val="SlightRight">→</button>
+            <button id="btn-shape-hardright" class="icon-btn sketch-box" data-action="setShape" data-val="HardRight">⇉</button>
+          </div>
+        </div>
+        <div class="control-col">
+          <div class="control-label">Trajectory</div>
+          <div class="btn-group">
+            <button id="btn-traj-low" class="icon-btn sketch-box active" data-action="setTrajectory" data-val="LOW">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M 3 17 Q 12 11 21 17"/><circle cx="21" cy="17" r="1.5" fill="currentColor" stroke="none"/></svg>
+            </button>
+            <button id="btn-traj-high" class="icon-btn sketch-box" data-action="setTrajectory" data-val="HIGH">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M 3 18 Q 12 2 21 18"/><circle cx="21" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="btn-play" class="btn-action" data-action="lockShot" disabled>Lock In Shot</button>
+        <button id="btn-reset" class="btn-action" data-action="nextHole" style="display: none; background: #5d4037;">Next Hole</button>
+      </div>
+    </footer>
+
+    <div id="scorecard-modal">
+      <div class="scorecard-content sketch-box">
+        <h2 style="margin-top: 0; text-align: center; text-decoration: underline;">Scorecard</h2>
+        <table class="scorecard-table">
+          <thead><tr id="scorecard-head"></tr></thead>
+          <tbody id="scorecard-body"></tbody>
+          <tfoot id="scorecard-foot"></tfoot>
+        </table>
+        <button id="scorecard-close-btn" class="close-btn" data-action="toggleScorecard">Close</button>
+      </div>
+    </div>
+
+    <!-- Tutorial Modal -->
+    <div id="tutorial-modal" style="z-index: 400;">
+      <div class="scorecard-content sketch-box" style="transform: rotate(-1deg);">
+        <h2 style="margin-top: 0; text-align: center; text-decoration: underline;">Caddie's Notes</h2>
+        
+        <div style="margin-bottom: 15px;">
+          <h3 style="margin: 0 0 5px 0;">💨 Trajectory</h3>
+          <p style="margin: 0; font-size: 15px; line-height: 1.4;">
+            <strong>Low (Line Drive):</strong> Punches through wind easily, but takes a massive bounce and rolls far.<br>
+            <strong>High (Floater):</strong> Gets pushed heavily by the wind, but lands soft with very little roll.
+          </p>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <h3 style="margin: 0 0 5px 0;">↩️ Shot Shaping</h3>
+          <p style="margin: 0; font-size: 15px; line-height: 1.4;">
+            Curving the ball (Left/Right) fights crosswinds and helps wrap around hazards. However, curving the ball causes it to lose forward distance in the air! It will land short and wide, then take a hard bounce back inward.
+          </p>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <h3 style="margin: 0 0 5px 0;">Wind, slopes, and scoring</h3>
+          <p style="margin: 0; font-size: 15px; line-height: 1.4;">
+            The wind range is how many hexes the ball can be pushed after you pick a landing spot. Arrows are slopes: rolling with one is cheap, rolling against one costs extra, and a ball that stops on a slope keeps sliding that way.<br>
+            One shot per hole. Lowest score wins. Score is hexes from the pin, plus a penalty: fairway 1, rough 2, bunker 3, water or out of bounds 4. The hole itself is 0.
+          </p>
+        </div>
+
+        <button class="close-btn" data-action="hideTutorial">Got it!</button>
+      </div>
+    </div>
+    
+    <!-- Editor Export Modal -->
+    <div id="export-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(62, 58, 53, 0.6); display: none; justify-content: center; align-items: center; z-index: 300;">
+      <div class="sketch-box" style="padding: 20px; width: 90%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto;">
+        <h3 style="margin: 0; text-align: center;">Map Data JSON</h3>
+        <textarea id="export-textarea" style="width: 100%; height: 200px; font-family: monospace; font-size: 12px; resize: none; border: 2px solid var(--ink); border-radius: 4px; padding: 5px; box-sizing: border-box;"></textarea>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-action" data-action="exportCopy">Copy</button>
+          <button class="btn-action" style="background: #d32f2f;" data-action="exportClose">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+    /* =========================================================================
+       TABLE OF CONTENTS
+       1. CONFIGURATION & UTILITIES
+       2. STATE MANAGEMENT
+       3. PURE LOGIC SERVICES
+       4. RENDERING & UI
+       5. SHARED GRID MODULE
+       6. GAME CONTROLLER
+       7. MAP EDITOR
+       8. BOOTSTRAPPING & DATA
+       ========================================================================= */
+
+    /* =========================================
+       1. CONFIGURATION & UTILITIES
+       ========================================= */
+    const CONFIG = {
+      UI: { 
+          hexSize: 14, 
+          svgOrigin: { x: 250, y: 275 }, 
+          teePx: { x: 250, y: 600 },
+          zoomFactor: 1.1,
+          shapeIcons: { "HardLeft":"⇇", "SlightLeft":"←", "Straight":"↑", "SlightRight":"→", "HardRight":"⇉" }
+      },
+      COLORS: {
+          ink: '#3e3a35',
+          win: '#2e7d32',
+          lose: '#d32f2f',
+          defaultSlot: ['#9c27b0', '#f57c00', '#00bcd4', '#e91e63']
+      },
+      BOT_FUZZINESS: {
+          Easy: 25.0,
+          Medium: 12.0,
+          Hard: 4.0,
+          Impossible: 0.0
+      },
+      PHYSICS: { baseHeights: { WEDGE: 140, IRON: 90, WOOD: 60 } },
+      CLUBS: {
+        WEDGE: { traj: { HIGH: { bounce: [0, 1], roll: [-2, 0] }, LOW:  { bounce: [1, 1], roll: [0, 1] } } },
+        IRON:  { traj: { HIGH: { bounce: [0, 1], roll: [0, 2] },  LOW:  { bounce: [1, 1], roll: [2, 3] } } },
+        WOOD:  { traj: { HIGH: { bounce: [1, 2], roll: [1, 3] },  LOW:  { bounce: [2, 2], roll: [3, 4] } } }
+      },
+      SHAPES: {
+        "HardLeft": { dir: "South-West", mag: 2, spin: -1 },
+        "SlightLeft": { dir: "South-West", mag: 1, spin: -1 },
+        "Straight": { dir: "North", mag: 0, spin: 0 },
+        "SlightRight": { dir: "South-East", mag: 1, spin: 1 },
+        "HardRight": { dir: "South-East", mag: 2, spin: 1 }
+      },
+      DIR: { "North": { q: 0, r: -1 }, "North-East": { q: 1, r: -1 }, "South-East": { q: 1, r: 0 }, "South": { q: 0, r: 1 },  "South-West": { q: -1, r: 1 }, "North-West": { q: -1, r: 0 } },
+      DIR_ORDER: ["North", "North-East", "South-East", "South", "South-West", "North-West"],
+      DIR_ANGLES: { "North": -90, "North-East": -30, "South-East": 30, "South": 90, "South-West": 150, "North-West": 210 },
+      WIND_ABBR: { "North": "↑ N", "North-East": "↗ NE", "South-East": "↘ SE", "South": "↓ S", "South-West": "↙ SW", "North-West": "↖ NW" }
+    };
+
+    const HexUtils = {
+      add: (a, b, scale = 1) => ({ q: a.q + b.q * scale, r: a.r + b.r * scale }),
+      rotate: (q, r) => ({ q: -r, r: q + r }),
+      rotateDirSteps: (dir, steps) => {
+        if (!dir) return null; 
+        let idx = CONFIG.DIR_ORDER.indexOf(dir);
+        let newIdx = (idx + steps) % 6;
+        if (newIdx < 0) newIdx += 6;
+        return CONFIG.DIR_ORDER[newIdx];
+      },
+      getOppositeDir: (dir) => CONFIG.DIR_ORDER[(CONFIG.DIR_ORDER.indexOf(dir) + 3) % 6],
+      getDirDiff: (dir1, dir2) => {
+        let diff = Math.abs(CONFIG.DIR_ORDER.indexOf(dir1) - CONFIG.DIR_ORDER.indexOf(dir2));
+        return diff > 3 ? 6 - diff : diff;
+      },
+      distance: (hexA, hexB) => {
+        const toCube = (h) => ({ x: h.q, y: -h.q - h.r, z: h.r });
+        const a = toCube(hexA), b = toCube(hexB);
+        return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y), Math.abs(a.z - b.z));
+      },
+      toPixel: (q, r) => ({
+        x: (CONFIG.UI.hexSize * (3/2) * q) + CONFIG.UI.svgOrigin.x,
+        y: (CONFIG.UI.hexSize * Math.sqrt(3) * (r + q/2)) + CONFIG.UI.svgOrigin.y
+      }),
+      randInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
+      hexToRgba: (hex, alpha) => {
+        let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+    };
+
+    /* =========================================
+       2. STATE MANAGEMENT (Proxy)
+       ========================================= */
+    const _internalGameState = {
+        currentHole: 1,
+        totalHoles: 3,
+        yardage: 0,
+        club: "IRON",
+        wind: { dir: "North", min: 1, max: 2 },
+        phase: 'lobby',
+        players: [],
+        history: [],
+        holeData: { pin: null, tiles: [], tileMap: new Map() }
+    };
+
+    const GameState = new Proxy(_internalGameState, {
+        set(target, prop, value) {
+            target[prop] = value;
+            if (prop === 'currentHole' || prop === 'totalHoles') {
+                document.getElementById('ui-hole').innerText = `${target.currentHole}/${target.totalHoles}`;
+            }
+            if (prop === 'yardage') {
+                document.getElementById('ui-yds').innerText = target.yardage;
+            }
+            if (prop === 'club') {
+                const clubIcons = { WEDGE: "(WG)", IRON: "(IR)", WOOD: "(WD)" };
+                document.getElementById('ui-club-display').innerText = `${clubIcons[target.club]} ${target.club}`;
+            }
+            if (prop === 'wind') {
+                document.getElementById('ui-wind').innerText = `${target.wind.min}-${target.wind.max} ${CONFIG.WIND_ABBR[target.wind.dir]}`;
+            }
+            return true;
+        }
+    });
+
+    /* =========================================
+       3. PURE LOGIC SERVICES
+       ========================================= */
+    const PhysicsEngine = {
+      // O(1) Map lookup
+      getTile: (q, r, tileMap) => tileMap.get(q + "," + r) || { q, r, type: 'ob', arrow: null },
+
+      resolveShot: (intent, holeData, tileMap) => {
+        const club = holeData.customClubStats || CONFIG.CLUBS[holeData.club];
+        const traj = club.traj[intent.trajectory];
+        const shapeDef = CONFIG.SHAPES[intent.shape];
+
+        let actualWindStr = HexUtils.randInt(holeData.wind.min, holeData.wind.max);
+        if (intent.trajectory === "LOW") actualWindStr = Math.max(0, actualWindStr - 2);
+
+        let bounceDistBase = HexUtils.randInt(traj.bounce[0], traj.bounce[1]);
+        let rawRoll = HexUtils.randInt(traj.roll[0], traj.roll[1]);
+        let startSpeed = Math.abs(rawRoll);
+
+        let landingHex = { ...intent.targetHex };
+
+        if (actualWindStr > 0) landingHex = HexUtils.add(landingHex, CONFIG.DIR[holeData.wind.dir], actualWindStr);
+        if (shapeDef.mag > 0) landingHex = HexUtils.add(landingHex, CONFIG.DIR[shapeDef.dir], shapeDef.mag);
+
+        let currentDir = "North"; 
+        const landTile = PhysicsEngine.getTile(landingHex.q, landingHex.r, tileMap);
+        let bounceDist = bounceDistBase;
+        let bounceDir = currentDir;
+
+        if (!['sand', 'water', 'ob'].includes(landTile.type)) {
+            if (shapeDef.spin !== 0) bounceDir = HexUtils.rotateDirSteps(bounceDir, shapeDef.spin);
+
+            if (landTile.arrow) {
+                const diff = HexUtils.getDirDiff(bounceDir, landTile.arrow);
+                if (diff === 0) { bounceDist += 1; } 
+                else if (diff === 3) { bounceDist = Math.max(0, bounceDist - 1); } 
+                else {
+                    let bIdx = CONFIG.DIR_ORDER.indexOf(bounceDir);
+                    let aIdx = CONFIG.DIR_ORDER.indexOf(landTile.arrow);
+                    let rot = (aIdx - bIdx + 6) % 6 <= 3 ? 1 : -1; 
+                    bounceDir = HexUtils.rotateDirSteps(bounceDir, rot);
+                    if (bounceDist === 0) bounceDist = 1; 
+                }
+            }
+        } else { bounceDist = 0; }
+
+        let bounceHex = landingHex;
+        if (bounceDist > 0) bounceHex = HexUtils.add(landingHex, CONFIG.DIR[bounceDir], bounceDist);
+        currentDir = bounceDir; 
+
+        if (rawRoll < 0) currentDir = HexUtils.getOppositeDir(currentDir);
+
+        let pos = { ...bounceHex };
+        const path = [pos];
+        let speed = startSpeed;
+        
+        while (speed > 0) {
+            const currentTile = PhysicsEngine.getTile(pos.q, pos.r, tileMap);
+            if (['sand', 'water', 'ob'].includes(currentTile.type)) { speed = 0; break; }
+
+            let moveDir = currentDir;
+            let cost = 1;
+
+            if (currentTile.type === 'pin') {
+                if (speed <= 1) { speed = 0; break; } 
+                else if (speed === 2) { moveDir = HexUtils.rotateDirSteps(currentDir, 1); cost = 1; } 
+                else if (speed === 3) { moveDir = HexUtils.getOppositeDir(currentDir); cost = 1; }
+            } else if (currentTile.arrow) {
+                const diff = HexUtils.getDirDiff(currentDir, currentTile.arrow);
+                if (diff === 0) { cost = 0; } 
+                else if (diff === 3) { cost = 2; } 
+                else if (diff === 1 || diff === 5) { cost = 1; moveDir = currentTile.arrow; } 
+                else if (diff === 2 || diff === 4) { cost = 2; moveDir = currentTile.arrow; }
+            }
+
+            speed -= cost;
+            if (speed >= 0) {
+                pos = HexUtils.add(pos, CONFIG.DIR[moveDir]);
+                path.push(pos);
+                if (currentTile.type === 'pin') {
+                    currentDir = moveDir; 
+                } else if (currentTile.arrow && (HexUtils.getDirDiff(currentDir, currentTile.arrow) <= 1 || HexUtils.getDirDiff(currentDir, currentTile.arrow) >= 5)) {
+                    currentDir = moveDir; 
+                }
+            }
+        }
+
+        let settleCount = 0;
+        let settleTile = PhysicsEngine.getTile(pos.q, pos.r, tileMap);
+        while (speed <= 0 && settleTile.arrow && settleCount < 10) {
+            pos = HexUtils.add(pos, CONFIG.DIR[settleTile.arrow]);
+            path.push(pos);
+            settleTile = PhysicsEngine.getTile(pos.q, pos.r, tileMap);
+            if (['sand', 'water', 'ob', 'pin'].includes(settleTile.type)) break; 
+            settleCount++;
+        }
+
+        return { intent, landingHex, bounceHex, rollPath: path, finalHex: pos };
+      }
+    };
+
+    const BotService = {
+        shotScore: function(simResult, pin, tileMap) {
+            const finalTile = PhysicsEngine.getTile(simResult.finalHex.q, simResult.finalHex.r, tileMap);
+            let dist = HexUtils.distance(simResult.finalHex, pin);
+            let penalty = 0;
+            if (finalTile.type === 'ob' || finalTile.type === 'water') penalty += 50;
+            else if (finalTile.type === 'sand') penalty += 10;
+            else if (finalTile.type === 'rough') penalty += 4;
+            return dist + penalty;
+        },
+
+        fallbackIntent: function(tiles, pin) {
+            const safeTiles = tiles.filter(t => t.type === 'green' || t.type === 'fairway');
+            const pool = safeTiles.length ? safeTiles : tiles;
+            const target = pool[HexUtils.randInt(0, pool.length - 1)] || pin;
+            return { targetHex: { q: target.q, r: target.r }, shape: "Straight", trajectory: "LOW" };
+        },
+
+        // Runs `sims` shots for each intent. Yields every slice so a long
+        // search can paint "Thinking..." instead of freezing the tab.
+        sampleIntents: async function(intents, sims, hole, tileMap, fuzziness) {
+            const SLICE = 2000;
+            let used = 0;
+            let bestIntent = null;
+            let bestScore = Infinity;
+            const ranked = [];
+            for (let n = 0; n < intents.length; n++) {
+                const intent = intents[n];
+                let total = 0;
+                for (let i = 0; i < sims; i++) {
+                    const simResult = PhysicsEngine.resolveShot(intent, hole, tileMap);
+                    total += this.shotScore(simResult, hole.pin, tileMap);
+                    used++;
+                    if (used >= SLICE) {
+                        used = 0;
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
+                }
+                const avg = total / sims;
+                const fuzzy = avg + (Math.random() * fuzziness);
+                ranked.push({ intent, avg, fuzzy });
+                if (fuzzy < bestScore) { bestScore = fuzzy; bestIntent = intent; }
+            }
+            ranked.sort((a, b) => a.avg - b.avg);
+            return { bestIntent, ranked };
+        },
+
+        calculateIntent: async function(bot, originalHoleData) {
+            let bestIntent = null; const diff = bot.difficulty;
+            let botHole = { ...originalHoleData, wind: { ...originalHoleData.wind } };
+            let botTiles = originalHoleData.tiles.map(t => ({ ...t }));
+            let botClubStats = JSON.parse(JSON.stringify(CONFIG.CLUBS[originalHoleData.club]));
+            let fuzziness = CONFIG.BOT_FUZZINESS[diff] || 12.0;
+            const thorough = diff === "Hard" || diff === "Impossible";
+
+            if (diff === "Easy") {
+                if (Math.random() < 0.8) botHole.wind.dir = HexUtils.rotateDirSteps(botHole.wind.dir, Math.floor(Math.random() * 5) + 1);
+                let windError = Math.floor(Math.random() * 6) - 2;
+                botHole.wind.min = Math.max(0, botHole.wind.min + windError);
+                botHole.wind.max = botHole.wind.min + 1;
+                botTiles.forEach(t => { if (t.arrow) t.arrow = HexUtils.rotateDirSteps(t.arrow, Math.floor(Math.random() * 5) + 1); });
+            }
+            else if (diff === "Medium") {
+                if (Math.random() > 0.5) botHole.wind.dir = HexUtils.rotateDirSteps(botHole.wind.dir, Math.random() > 0.5 ? 1 : -1);
+                let windError = Math.floor(Math.random() * 4) - 1;
+                botHole.wind.min = Math.max(0, botHole.wind.min + windError);
+                botHole.wind.max = botHole.wind.min + 1;
+                botTiles.forEach(t => { if (t.arrow && Math.random() < 0.5) t.arrow = HexUtils.rotateDirSteps(t.arrow, Math.random() > 0.5 ? 1 : -1); });
+                let rollError = Math.random() > 0.5 ? 1 : -1;
+                Object.keys(botClubStats.traj).forEach(t => { botClubStats.traj[t].roll[0] += rollError; botClubStats.traj[t].roll[1] += rollError; });
+            }
+            else if (diff === "Hard") {
+                // Search the real hole. A small tie-break keeps Hard just short of perfect.
+                fuzziness = 1;
+            }
+
+            const botTileMap = new Map();
+            botTiles.forEach(t => botTileMap.set(`${t.q},${t.r}`, t));
+            botHole.customClubStats = botClubStats;
+
+            const searchRadius = diff === "Easy" ? 3 : diff === "Medium" ? 4 : diff === "Hard" ? 5 : 6;
+            const simCount = { Easy: 6, Medium: 10 }[diff] || 12;
+            const candidateCap = { Easy: 12, Medium: 18, Hard: 80, Impossible: 100 }[diff] || 18;
+            let shapesToTest = ["Straight", "SlightLeft", "SlightRight", "HardLeft", "HardRight"];
+            if (diff === "Easy") shapesToTest = ["Straight", "SlightLeft", "SlightRight"];
+            const trajectories = ["LOW", "HIGH"];
+
+            let estimatedWind = Math.floor((botHole.wind.min + botHole.wind.max) / 2);
+            const oppWindDir = HexUtils.getOppositeDir(botHole.wind.dir);
+            let searchCenter = { ...botHole.pin };
+            if (estimatedWind > 0) searchCenter = HexUtils.add(searchCenter, CONFIG.DIR[oppWindDir], estimatedWind);
+
+            const candidateHexes = botTiles
+                .filter(t => HexUtils.distance(t, searchCenter) <= searchRadius && !['ob', 'water'].includes(t.type))
+                .sort((a, b) => HexUtils.distance(a, searchCenter) - HexUtils.distance(b, searchCenter))
+                .slice(0, candidateCap);
+
+            const intents = [];
+            candidateHexes.forEach(hex => {
+                trajectories.forEach(traj => {
+                    shapesToTest.forEach(shape => {
+                        intents.push({ targetHex: { q: hex.q, r: hex.r }, trajectory: traj, shape: shape });
+                    });
+                });
+            });
+
+            if (!thorough) {
+                const quick = await this.sampleIntents(intents, simCount, botHole, botTileMap, fuzziness);
+                bestIntent = quick.bestIntent;
+            } else {
+                // Scout every line, then spend the rest of ~100k shots on the leaders.
+                const shotBudget = diff === "Impossible" ? 100000 : 70000;
+                const scoutSims = 16;
+                const finalistCount = diff === "Impossible" ? 40 : 28;
+                const scout = await this.sampleIntents(intents, scoutSims, botHole, botTileMap, 0);
+                const leaders = scout.ranked.slice(0, Math.min(finalistCount, scout.ranked.length));
+                const scoutCost = intents.length * scoutSims;
+                const refineSims = leaders.length
+                    ? Math.max(80, Math.floor((shotBudget - scoutCost) / leaders.length))
+                    : 0;
+                if (leaders.length) {
+                    const refined = await this.sampleIntents(leaders.map(row => row.intent), refineSims, botHole, botTileMap, fuzziness);
+                    bestIntent = refined.bestIntent;
+                }
+            }
+
+            if (!bestIntent) bestIntent = this.fallbackIntent(originalHoleData.tiles, originalHoleData.pin);
+            return bestIntent;
+        }
+    };
+
+    /* =========================================
+       4. RENDERING & UI MANAGERS
+       ========================================= */
+    const Viewport = {
+      svg: null, defaultVB: { x: 0, y: 0, w: 500, h: 550 }, currentVB: { x: 0, y: 0, w: 500, h: 550 },
+      isPanning: false, didPan: false, startPt: { x: 0, y: 0 }, pinchStartDist: 0, rAF: null, initialized: false,
+      
+      init: function() { 
+        this.svg = document.getElementById('hex-grid'); 
+        if (!this.initialized) { this.setupEvents(); this.initialized = true; }
+      },
+      setDefault: function(x, y, w, h) { this.defaultVB = { x, y, w, h }; this.reset(); },
+      reset: function() { this.currentVB = { ...this.defaultVB }; this.update(); },
+      
+      update: function() {
+        if (this.rAF) cancelAnimationFrame(this.rAF);
+        this.rAF = requestAnimationFrame(() => {
+            this.svg.setAttribute('viewBox', `${this.currentVB.x} ${this.currentVB.y} ${this.currentVB.w} ${this.currentVB.h}`);
+        });
+      },
+
+      setupEvents: function() {
+        this.svg.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          this.isPanning = true; this.didPan = false; this.startPt = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('pointermove', (e) => {
+          if (!this.isPanning) return;
+          const dx = e.clientX - this.startPt.x; const dy = e.clientY - this.startPt.y;
+          if (Math.hypot(dx, dy) > 5) this.didPan = true;
+          const rect = this.svg.getBoundingClientRect();
+          const scaleX = this.currentVB.w / rect.width; const scaleY = this.currentVB.h / rect.height;
+          
+          this.currentVB.x -= dx * scaleX; this.currentVB.y -= dy * scaleY;
+          this.startPt = { x: e.clientX, y: e.clientY }; this.update();
+        });
+
+        window.addEventListener('pointerup', () => { this.isPanning = false; });
+        
+        this.svg.addEventListener('wheel', (e) => {
+          e.preventDefault(); const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9; this.zoom(zoomFactor, e.clientX, e.clientY);
+        }, { passive: false });
+
+        this.svg.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 2) {
+            this.isPanning = false;
+            this.pinchStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          }
+        }, { passive: false });
+
+        this.svg.addEventListener('touchmove', (e) => {
+          if (e.touches.length === 2) {
+            e.preventDefault();
+            const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            const zoomFactor = this.pinchStartDist / currentDist;
+            const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2; const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            this.zoom(zoomFactor, cx, cy); this.pinchStartDist = currentDist;
+          }
+        }, { passive: false });
+      },
+
+      zoom: function(factor, clientX, clientY) {
+        const rect = this.svg.getBoundingClientRect();
+        const minWidth = this.defaultVB.w * 0.3, maxWidth = this.defaultVB.w * 4;
+        if (this.currentVB.w * factor < minWidth) factor = minWidth / this.currentVB.w;
+        if (this.currentVB.w * factor > maxWidth) factor = maxWidth / this.currentVB.w;
+
+        const svgX = this.currentVB.x + ((clientX - rect.left) / rect.width) * this.currentVB.w;
+        const svgY = this.currentVB.y + ((clientY - rect.top) / rect.height) * this.currentVB.h;
+
+        this.currentVB.w *= factor; this.currentVB.h *= factor;
+        this.currentVB.x = svgX - ((clientX - rect.left) / rect.width) * this.currentVB.w;
+        this.currentVB.y = svgY - ((clientY - rect.top) / rect.height) * this.currentVB.h;
+        this.update();
+      }
+    };
+
+    const AnimationEngine = {
+      highlightState: {}, 
+
+      applyHexColor: (hex, playerColorInfo, isDashed = false) => {
+        const key = `${hex.q},${hex.r}`;
+        if (!AnimationEngine.highlightState[key]) AnimationEngine.highlightState[key] = { colors: [], isDashed: isDashed };
+        
+        if (!AnimationEngine.highlightState[key].colors.find(c => c.base === playerColorInfo.base)) {
+            AnimationEngine.highlightState[key].colors.push(playerColorInfo);
+        }
+        
+        AnimationEngine.highlightState[key].isDashed = isDashed || AnimationEngine.highlightState[key].isDashed;
+
+        const el = document.querySelector(`.hex[data-q="${hex.q}"][data-r="${hex.r}"]`);
+        if (el) {
+            el.classList.add('player-highlight');
+            AnimationEngine.renderHighlight(hex.q, hex.r, key);
+        }
+      },
+
+      renderHighlight: (q, r, key) => {
+        const state = AnimationEngine.highlightState[key];
+        const colors = [...state.colors].sort((a,b) => a.base.localeCompare(b.base));
+        
+        const hlLayer = document.getElementById("highlight-layer");
+        const existingId = `hl-${q}-${r}`;
+        const existing = document.getElementById(existingId);
+        if (existing) existing.remove();
+
+        if (colors.length === 0) return;
+
+        const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        group.id = existingId;
+        
+        const coords = HexUtils.toPixel(q, r);
+        const R = CONFIG.UI.hexSize;
+        const V = [];
+        for (let i = 0; i < 6; i++) {
+            const angle_rad = Math.PI / 180 * (60 * i);
+            V.push({ x: coords.x + R * Math.cos(angle_rad), y: coords.y + R * Math.sin(angle_rad) });
+        }
+
+        const allocs = [ [], [[0,1,2,3,4,5]], [[0,1,2], [3,4,5]], [[0,1], [2,3], [4,5]], [[0,1], [2], [3,4], [5]] ];
+        let myAlloc = allocs[colors.length] || allocs[4];
+
+        colors.forEach((color, idx) => {
+            let pts = "";
+            if (colors.length === 1) {
+                for (let i = 0; i < 6; i++) pts += `${V[i].x},${V[i].y} `;
+            } else {
+                const tris = myAlloc[idx];
+                if (!tris) return;
+                const startV = tris[0];
+                pts += `${coords.x},${coords.y} `; 
+                for (let i = 0; i <= tris.length; i++) {
+                    const vIdx = (startV + i) % 6;
+                    pts += `${V[vIdx].x},${V[vIdx].y} `;
+                }
+            }
+            
+            const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            poly.setAttribute("points", pts.trim());
+            poly.setAttribute("fill", color.fill);
+            poly.setAttribute("stroke", color.base);
+            poly.setAttribute("stroke-width", "2.5");
+            poly.setAttribute("stroke-linejoin", "round");
+            if (state.isDashed) poly.setAttribute("stroke-dasharray", "4 3");
+            
+            group.appendChild(poly);
+        });
+
+        hlLayer.appendChild(group);
+      },
+
+      renderIntentIcons: (hex, players) => {
+        const px = HexUtils.toPixel(hex.q, hex.r);
+        const iconLayer = document.getElementById("icon-layer");
+
+        const sortedPlayers = [...players].sort((a,b) => a.color.base.localeCompare(b.color.base));
+        const allocs = [ [], [[0,1,2,3,4,5]], [[0,1,2], [3,4,5]], [[0,1], [2,3], [4,5]], [[0,1], [2], [3,4], [5]] ];
+        let myAlloc = allocs[sortedPlayers.length] || allocs[4];
+
+        sortedPlayers.forEach((p, idx) => {
+            if (idx >= 4) return;
+            let offset = { x: 0, y: -4 };
+            if (sortedPlayers.length > 1) {
+                const tris = myAlloc[idx];
+                const startV = tris[0];
+                const endV = tris[tris.length - 1] + 1;
+                const midV = (startV + endV) / 2;
+                const angle_rad = (Math.PI / 180) * (60 * midV);
+                const pushR = 18; 
+                offset = { x: Math.cos(angle_rad) * pushR, y: (Math.sin(angle_rad) * pushR) - 4 };
+            }
+            
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            group.setAttribute("class", "intent-icon"); 
+            group.setAttribute("transform", `translate(${px.x + offset.x}, ${px.y + offset.y})`);
+
+            const d = p.intent.trajectory === "HIGH" ? "M -12 2 Q -7 -8 -2 2" : "M -12 1 Q -7 -3 -2 1";
+
+            const haloPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            haloPath.setAttribute("d", d); haloPath.setAttribute("fill", "none"); haloPath.setAttribute("stroke", "rgba(255,255,255,0.95)"); haloPath.setAttribute("stroke-width", "4.5"); haloPath.setAttribute("stroke-linecap", "round"); group.appendChild(haloPath);
+
+            const trajPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            trajPath.setAttribute("d", d); trajPath.setAttribute("fill", "none"); trajPath.setAttribute("stroke", p.color.base); trajPath.setAttribute("stroke-width", "2"); trajPath.setAttribute("stroke-linecap", "round"); group.appendChild(trajPath);
+
+            const haloBall = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            haloBall.setAttribute("cx", "-2"); haloBall.setAttribute("cy", p.intent.trajectory === "HIGH" ? "2" : "1"); haloBall.setAttribute("r", "2.5"); haloBall.setAttribute("fill", "rgba(255,255,255,0.95)"); group.appendChild(haloBall);
+
+            const trajBall = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            trajBall.setAttribute("cx", "-2"); trajBall.setAttribute("cy", p.intent.trajectory === "HIGH" ? "2" : "1"); trajBall.setAttribute("r", "1.5"); trajBall.setAttribute("fill", p.color.base); group.appendChild(trajBall);
+
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", "6"); text.setAttribute("y", "3"); text.setAttribute("text-anchor", "middle"); text.setAttribute("font-size", "12px"); text.setAttribute("fill", p.color.base); text.setAttribute("font-weight", "bold"); text.setAttribute("pointer-events", "none"); 
+            text.setAttribute("paint-order", "stroke fill"); text.setAttribute("stroke", "rgba(255,255,255,0.95)"); text.setAttribute("stroke-width", "3");
+            
+            let shapeIcon = CONFIG.UI.shapeIcons[p.intent.shape] || "↑"; text.textContent = shapeIcon; group.appendChild(text); 
+            iconLayer.appendChild(group);
+        });
+      },
+
+      clearHighlights: () => {
+        AnimationEngine.highlightState = {};
+        document.querySelectorAll('.player-highlight').forEach(el => { el.classList.remove('player-highlight'); });
+        document.getElementById("highlight-layer").innerHTML = '';
+        document.getElementById("icon-layer").innerHTML = '';
+      },
+
+      playSimultaneous: (resultsData, holeData, callback) => {
+        const pathLayer = document.getElementById("path-layer"); pathLayer.innerHTML = ''; 
+        const teePx = CONFIG.UI.teePx; const baseHeight = CONFIG.PHYSICS.baseHeights[holeData.club];
+        let allPhases = []; let completedCount = 0; let overallStartTime = null; 
+
+        resultsData.forEach((data, idx) => {
+            const res = data.shotResult; const p = data.player;
+            const shadowPathEl = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
+            shadowPathEl.setAttribute("fill", "none"); 
+            shadowPathEl.setAttribute("stroke", "rgba(62, 58, 53, 0.4)"); 
+            shadowPathEl.setAttribute("stroke-width", "2"); 
+            shadowPathEl.setAttribute("pointer-events", "none"); 
+            pathLayer.appendChild(shadowPathEl);
+            
+            const tracerPathEl = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
+            tracerPathEl.setAttribute("fill", "none"); 
+            tracerPathEl.setAttribute("stroke", p.color.base); 
+            tracerPathEl.setAttribute("stroke-width", "3"); 
+            tracerPathEl.setAttribute("pointer-events", "none"); 
+            pathLayer.appendChild(tracerPathEl);
+            
+            const ballShadow = document.createElementNS("http://www.w3.org/2000/svg", "circle"); 
+            ballShadow.setAttribute("fill", "rgba(62, 58, 53, 0.4)"); 
+            ballShadow.setAttribute("r", "5"); 
+            ballShadow.setAttribute("pointer-events", "none"); 
+            pathLayer.appendChild(ballShadow);
+            
+            const ball = document.createElementNS("http://www.w3.org/2000/svg", "circle"); 
+            ball.setAttribute("fill", "#fff"); 
+            ball.setAttribute("stroke", p.color.base); 
+            ball.setAttribute("stroke-width", "2"); 
+            ball.setAttribute("r", "5"); 
+            ball.setAttribute("pointer-events", "none"); 
+            pathLayer.appendChild(ball);
+
+            const landingPx = HexUtils.toPixel(res.landingHex.q, res.landingHex.r); 
+            const bouncePx = HexUtils.toPixel(res.bounceHex.q, res.bounceHex.r);
+            const targetPx = HexUtils.toPixel(res.intent.targetHex.q, res.intent.targetHex.r);
+            
+            const pCtrl = { x: targetPx.x, y: targetPx.y };
+            const hMaxAir = res.intent.trajectory === "HIGH" ? baseHeight : baseHeight * 0.6;
+            
+            let phases = [];
+            phases.push({ type: 'air', p0: teePx, p1: landingPx, pCtrl: pCtrl, hMax: hMaxAir, duration: res.intent.trajectory === "HIGH" ? 1200 : 800 });
+            if (res.landingHex.q !== res.bounceHex.q || res.landingHex.r !== res.bounceHex.r) phases.push({ type: 'bounce', p0: landingPx, p1: bouncePx, hMax: hMaxAir * 0.25, duration: 350 });
+            if (res.rollPath.length > 1) {
+                for (let i = 0; i < res.rollPath.length - 1; i++) {
+                    phases.push({ type: 'roll', p0: HexUtils.toPixel(res.rollPath[i].q, res.rollPath[i].r), p1: HexUtils.toPixel(res.rollPath[i+1].q, res.rollPath[i+1].r), hMax: 0, duration: res.intent.trajectory === "HIGH" ? 200 : 120 });
+                }
+            }
+            allPhases.push({ player: p, result: res, phases: phases, currentPhase: 0, startTime: null, delay: idx * 250, tracer_d: `M ${teePx.x} ${teePx.y}`, shadow_d: `M ${teePx.x} ${teePx.y}`, els: { shadowPathEl, tracerPathEl, ballShadow, ball } });
+        });
+
+        function animationTick(timestamp) {
+            if (!overallStartTime) overallStartTime = timestamp;
+            let activeAnim = false;
+            allPhases.forEach(anim => {
+                if (anim.currentPhase >= anim.phases.length) return; 
+                activeAnim = true;
+                if (timestamp < overallStartTime + anim.delay) return;
+                if (!anim.startTime) anim.startTime = timestamp;
+
+                const phase = anim.phases[anim.currentPhase];
+                let t = (timestamp - anim.startTime) / phase.duration; if (t > 1) t = 1;
+
+                let x, y;
+                if (phase.type === 'air' && phase.pCtrl) {
+                    x = (1 - t) * (1 - t) * phase.p0.x + 2 * (1 - t) * t * phase.pCtrl.x + t * t * phase.p1.x;
+                    y = (1 - t) * (1 - t) * phase.p0.y + 2 * (1 - t) * t * phase.pCtrl.y + t * t * phase.p1.y;
+                } else {
+                    x = phase.p0.x + t * (phase.p1.x - phase.p0.x);
+                    y = phase.p0.y + t * (phase.p1.y - phase.p0.y);
+                }
+
+                const z = 4 * phase.hMax * t * (1 - t);
+                anim.els.ball.setAttribute("cx", x); anim.els.ball.setAttribute("cy", y - z);
+                
+                const shadowScale = Math.max(0.3, 1 - (z / 100)); 
+                anim.els.ballShadow.setAttribute("cx", x); anim.els.ballShadow.setAttribute("cy", y); anim.els.ballShadow.setAttribute("r", 5 * shadowScale); anim.els.ballShadow.style.opacity = Math.max(0.1, 1 - (z / 100));
+
+                anim.tracer_d += ` L ${x} ${y - z}`; anim.shadow_d += ` L ${x} ${y}`;
+                anim.els.tracerPathEl.setAttribute("d", anim.tracer_d); anim.els.shadowPathEl.setAttribute("d", anim.shadow_d);
+
+                if (t >= 1) {
+                    if (phase.type === 'air') AnimationEngine.applyHexColor(anim.result.landingHex, anim.player.color, false);
+                    else if (phase.type === 'bounce') AnimationEngine.applyHexColor(anim.result.bounceHex, anim.player.color, false);
+
+                    anim.currentPhase++; anim.startTime = null;
+                    if (anim.currentPhase >= anim.phases.length) {
+                        completedCount++; AnimationEngine.applyHexColor(anim.result.finalHex, anim.player.color, false);
+                        if (anim.result.finalHex.q === holeData.pin.q && anim.result.finalHex.r === holeData.pin.r) {
+                            anim.els.ball.style.transition = "opacity 0.4s ease"; anim.els.ballShadow.style.transition = "opacity 0.4s ease";
+                            anim.els.ball.style.opacity = "0"; anim.els.ballShadow.style.opacity = "0";
+                        }
+                    }
+                }
+            });
+            if (activeAnim) requestAnimationFrame(animationTick); else callback();
+        }
+        requestAnimationFrame(animationTick);
+      }
+    };
+
+    /* =========================================
+       5. SHARED GRID MODULE
+       ========================================= */
+    const GridRenderer = {
+      render: function(tiles, gridLayerId = "grid-layer") {
+        const gridLayer = document.getElementById(gridLayerId);
+        gridLayer.innerHTML = "";
+        tiles.forEach(tile => {
+          const coords = HexUtils.toPixel(tile.q, tile.r);
+          let points = "";
+          for (let i = 0; i < 6; i++) {
+            const angle_rad = Math.PI / 180 * (60 * i);
+            points += `${coords.x + CONFIG.UI.hexSize * Math.cos(angle_rad)},${coords.y + CONFIG.UI.hexSize * Math.sin(angle_rad)} `;
+          }
+          const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+          polygon.setAttribute("points", points); polygon.classList.add("hex");
+          
+          const fillType = tile.type === 'pin' ? 'green' : tile.type;
+          polygon.style.fill = `url(#pat-${fillType})`;
+          polygon.setAttribute("data-q", tile.q);
+          polygon.setAttribute("data-r", tile.r);
+          gridLayer.appendChild(polygon);
+          
+          if (tile.type === 'pin') {
+            const hole = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            hole.setAttribute("cx", coords.x); hole.setAttribute("cy", coords.y); hole.setAttribute("r", 5); hole.setAttribute("fill", "var(--ink)"); hole.style.pointerEvents = "none"; gridLayer.appendChild(hole);
+          }
+          if (tile.arrow) {
+            const angle = CONFIG.DIR_ANGLES[tile.arrow];
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", coords.x + Math.cos(angle * Math.PI / 180) * (CONFIG.UI.hexSize * 0.15)); line.setAttribute("y1", coords.y + Math.sin(angle * Math.PI / 180) * (CONFIG.UI.hexSize * 0.15));
+            line.setAttribute("x2", coords.x + Math.cos(angle * Math.PI / 180) * (CONFIG.UI.hexSize * 0.8)); line.setAttribute("y2", coords.y + Math.sin(angle * Math.PI / 180) * (CONFIG.UI.hexSize * 0.8));
+            line.setAttribute("stroke", "#388e3c"); line.setAttribute("stroke-width", "2"); line.setAttribute("stroke-linecap", "round"); line.setAttribute("marker-end", "url(#arrowhead)"); line.style.pointerEvents = "none"; gridLayer.appendChild(line);
+          }
+        });
+      },
+      updateBounds: function(tiles) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        tiles.forEach(tile => {
+            const px = HexUtils.toPixel(tile.q, tile.r);
+            if (px.x < minX) minX = px.x; if (px.x > maxX) maxX = px.x;
+            if (px.y < minY) minY = px.y; if (px.y > maxY) maxY = px.y;
+        });
+        const pad = CONFIG.UI.hexSize * 1.5; 
+        let w = (maxX - minX) + 2 * pad, h = (maxY - minY) + 2 * pad;
+        const z = CONFIG.UI.zoomFactor; w *= z; h *= z;
+        Viewport.setDefault(minX + (maxX - minX) / 2 - w / 2, minY + (maxY - minY) / 2 - h / 2, w, h);
+      }
+    };
+
+    /* =========================================
+       6. GAME CONTROLLER 
+       ========================================= */
+    const GameController = {
+      currentPlayerIndex: 0,
+      baseTiles: [],
+
+      loadMap: function(mapData) {
+        this.baseTiles = mapData.tiles.map(t => ({...t}));
+        GameState.holeData.tiles = this.baseTiles.map(t => ({...t}));
+        this.placeRandomPin();
+        this.rebuildTileMap();
+      },
+
+      rebuildTileMap: function() {
+        GameState.holeData.tileMap.clear();
+        GameState.holeData.tiles.forEach(t => GameState.holeData.tileMap.set(`${t.q},${t.r}`, t));
+      },
+
+      placeRandomPin: function() {
+        const oldPinTile = GameState.holeData.tiles.find(t => t.type === 'pin');
+        if (oldPinTile) oldPinTile.type = 'green';
+        const flatGreens = GameState.holeData.tiles.filter(t => t.type === 'green' && !t.arrow);
+        const validPins = flatGreens.filter(tile => {
+          let surroundedByGreen = true;
+          for (let dirName of CONFIG.DIR_ORDER) {
+            const dir = CONFIG.DIR[dirName];
+            const neighbor = GameState.holeData.tiles.find(t => t.q === tile.q + dir.q && t.r === tile.r + dir.r);
+            if (!neighbor || neighbor.type !== 'green') { surroundedByGreen = false; break; }
+          }
+          return surroundedByGreen;
+        });
+        const candidates = validPins.length > 0 ? validPins : flatGreens;
+        if (candidates.length > 0) {
+          const randomTile = candidates[Math.floor(Math.random() * candidates.length)];
+          randomTile.type = 'pin'; GameState.holeData.pin = { q: randomTile.q, r: randomTile.r };
+        }
+      },
+
+      setupPlayersFromLobby: function(activeSlots, totalHoles) {
+        GameState.totalHoles = totalHoles; GameState.players = []; let botCount = 1;
+        activeSlots.forEach((slot, i) => {
+            let id = slot.type === 'Human' ? `P${i+1}` : `B${botCount++}`;
+            let name = slot.type === 'Human' ? slot.name : `Bot ${botCount-1}`;
+            GameState.players.push({
+                id: id, name: name, isBot: slot.type === 'Bot', difficulty: slot.difficulty, totalScore: 0, 
+                color: { base: slot.color, fill: HexUtils.hexToRgba(slot.color, 0.5) },
+                intent: { targetHex: null, shape: "Straight", trajectory: "LOW" }
+            });
+        });
+      },
+
+      startRound: function(mapData) {
+        if (!mapData || typeof mapData !== 'object' || !Array.isArray(mapData.tiles)) {
+            alert("Invalid Map Data");
+            return;
+        }
+        Viewport.init();
+        this.loadMap(mapData); 
+        this.generateHoleStats(); 
+        this.rollWind();
+        GridRenderer.render(GameState.holeData.tiles);
+        GridRenderer.updateBounds(GameState.holeData.tiles);
+        this.beginAimPhase();
+      },
+
+      beginAimPhase: function() {
+        GameState.phase = 'intent'; this.currentPlayerIndex = 0; AnimationEngine.clearHighlights(); this.loadCurrentPlayerTurn();
+      },
+
+      refreshHighlights: function() {
+          AnimationEngine.clearHighlights();
+          const hexGroups = {};
+          GameState.players.forEach(player => {
+              if (player.intent.targetHex) {
+                  const key = `${player.intent.targetHex.q},${player.intent.targetHex.r}`;
+                  if (!hexGroups[key]) hexGroups[key] = { hex: player.intent.targetHex, players: [] };
+                  hexGroups[key].players.push(player);
+              }
+          });
+
+          Object.values(hexGroups).forEach(group => {
+              group.players.forEach(p => { AnimationEngine.applyHexColor(group.hex, p.color, true); });
+              AnimationEngine.renderIntentIcons(group.hex, group.players);
+          });
+      },
+
+      loadCurrentPlayerTurn: function() {
+        const p = GameState.players[this.currentPlayerIndex];
+        const banner = document.getElementById('turn-banner'); banner.style.display = 'block';
+        banner.innerText = p.isBot ? `${p.name} (Thinking...)` : p.name;
+        banner.style.backgroundColor = p.color.fill; banner.style.color = CONFIG.COLORS.ink; banner.style.borderColor = p.color.base;
+
+        this.refreshHighlights();
+
+        if (p.isBot) {
+            this.updatePlayerControls();
+            setTimeout(() => {
+                const hole = { club: GameState.club, wind: GameState.wind, tiles: GameState.holeData.tiles, pin: GameState.holeData.pin };
+                BotService.calculateIntent(p, hole).then((intent) => {
+                    p.intent = intent;
+                    banner.innerText = `${p.name}`;
+                    this.refreshHighlights();
+                    setTimeout(() => { this.lockShot(); }, 1200);
+                });
+            }, 800);
+        } else {
+            if (!p.intent.shape) p.intent.shape = "Straight"; if (!p.intent.trajectory) p.intent.trajectory = "LOW";
+            this.setShape(p.intent.shape); this.setTrajectory(p.intent.trajectory); this.updatePlayerControls();
+        }
+      },
+
+      setTrajectory: function(traj) {
+        if (GameState.phase !== 'intent' || GameState.players[this.currentPlayerIndex].isBot) return;
+        GameState.players[this.currentPlayerIndex].intent.trajectory = traj;
+        document.getElementById('btn-traj-low').classList.remove('active'); document.getElementById('btn-traj-high').classList.remove('active');
+        document.getElementById(`btn-traj-${traj.toLowerCase()}`).classList.add('active');
+        this.refreshHighlights(); this.updatePlayerControls(); 
+      },
+
+      setShape: function(shape) {
+        if (GameState.phase !== 'intent' || GameState.players[this.currentPlayerIndex].isBot) return;
+        GameState.players[this.currentPlayerIndex].intent.shape = shape;
+        document.querySelectorAll('#btn-shape-hardleft, #btn-shape-slightleft, #btn-shape-straight, #btn-shape-slightright, #btn-shape-hardright').forEach(el => el.classList.remove('active'));
+        document.getElementById(`btn-shape-${shape.toLowerCase()}`).classList.add('active');
+        this.refreshHighlights(); this.updatePlayerControls();
+      },
+
+      selectTarget: function(q, r) {
+        if (GameState.phase !== 'intent' || GameState.players[this.currentPlayerIndex].isBot) return;
+        if (Viewport.didPan) return;
+        GameState.players[this.currentPlayerIndex].intent.targetHex = { q, r };
+        this.refreshHighlights(); this.updatePlayerControls();
+      },
+
+      lockShot: function() {
+        if (GameState.phase !== 'intent') return;
+        this.currentPlayerIndex++;
+        if (this.currentPlayerIndex >= GameState.players.length) this.simulateAllShots(); else this.loadCurrentPlayerTurn();
+      },
+
+      simulateAllShots: function() {
+        GameState.phase = 'animating'; AnimationEngine.clearHighlights(); 
+        this.updatePlayerControls(); document.getElementById('turn-banner').style.display = 'none';
+        GameState.players.forEach(p => { if (p.intent.targetHex) AnimationEngine.applyHexColor(p.intent.targetHex, p.color, true); });
+
+        let resultsData = []; let holeDataSnapshot = { club: GameState.club, wind: GameState.wind, pin: GameState.holeData.pin };
+        GameState.players.forEach(p => {
+            const res = PhysicsEngine.resolveShot(p.intent, holeDataSnapshot, GameState.holeData.tileMap);
+            resultsData.push({ player: p, shotResult: res });
+        });
+        AnimationEngine.playSimultaneous(resultsData, holeDataSnapshot, () => this.resolveScoring(resultsData));
+      },
+
+      resolveScoring: function(resultsData) {
+        let holeScores = []; let htmlStr = '';
+        let trajIconHigh = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M 3 18 Q 12 2 21 18"/><circle cx="21" cy="18" r="2" fill="currentColor" stroke="none"/></svg>`;
+        let trajIconLow = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M 3 17 Q 12 11 21 17"/><circle cx="21" cy="17" r="2" fill="currentColor" stroke="none"/></svg>`;
+
+        resultsData.forEach(data => {
+            const p = data.player; const res = data.shotResult;
+            let baseDist = HexUtils.distance(res.finalHex, GameState.holeData.pin);
+            let penalty = 0, statusMsg = "Safe";
+            const tile = PhysicsEngine.getTile(res.finalHex.q, res.finalHex.r, GameState.holeData.tileMap);
+            
+            if (tile.type === 'ob') { statusMsg = "O.B."; penalty = 4; } else if (tile.type === 'water') { statusMsg = "Water"; penalty = 4; } 
+            else if (tile.type === 'sand') { statusMsg = "Bunker"; penalty = 3; } else if (tile.type === 'rough') { statusMsg = "Rough"; penalty = 2; }
+            else if (tile.type === 'fairway') { statusMsg = "Fairway"; penalty = 1; } else if (tile.type === 'pin') { statusMsg = "Hole!"; penalty = 0; baseDist = 0; }
+
+            const finalScore = baseDist + penalty;
+            p.totalScore += finalScore; holeScores.push({ playerId: p.id, score: finalScore });
+
+            let trajIcon = p.intent.trajectory === "HIGH" ? trajIconHigh : trajIconLow;
+            let shapeIcon = CONFIG.UI.shapeIcons[p.intent.shape] || "↑";
+
+            htmlStr += `
+            <div class="player-stat-row">
+                <span style="color: ${p.color.base}; display:flex; align-items:center;">${p.name} <span class="intent-review">${trajIcon}${shapeIcon}</span></span>
+                <div style="display:flex; gap:10px; align-items:center;">
+                  <span style="color:${CONFIG.COLORS.lose}; font-size:18px;">${finalScore}</span>
+                  <span style="font-size: 14px; font-weight: normal; color: #555;">(${statusMsg} | Pen: ${penalty})</span>
+                </div>
+            </div>`;
+        });
+
+        GameState.history.push({ hole: GameState.currentHole, yds: GameState.yardage, scores: holeScores });
+        document.getElementById('overlay-content').innerHTML = htmlStr;
+        const overlay = document.getElementById('status-overlay');
+        overlay.style.left = '50%'; overlay.style.right = 'auto'; overlay.style.top = '80px'; overlay.style.bottom = 'auto';
+        overlay.style.transform = 'translateX(-50%) rotate(-1deg)'; overlay.style.display = "block";
+        
+        GameState.phase = 'finished'; this.updatePlayerControls();
+      },
+
+      nextHole: function() {
+        if (GameState.currentHole >= GameState.totalHoles) { GameState.phase = 'gameover'; this.toggleScorecard(); return; }
+        
+        GameState.currentHole++; 
+        GameState.players.forEach(p => { p.intent = { targetHex: null, shape: 'Straight', trajectory: 'LOW'}; });
+        document.getElementById('status-overlay').style.display = 'none'; 
+        document.getElementById('path-layer').innerHTML = '';
+
+        GameState.holeData.tiles = GameState.holeData.tiles.map(tile => {
+            const rotated = HexUtils.rotate(tile.q, tile.r);
+            return { ...tile, q: rotated.q, r: rotated.r, arrow: tile.arrow ? HexUtils.rotateDirSteps(tile.arrow, 1) : null };
+        });
+        this.placeRandomPin();
+        this.rebuildTileMap();
+
+        this.generateHoleStats();
+        this.rollWind();
+        GridRenderer.render(GameState.holeData.tiles);
+        GridRenderer.updateBounds(GameState.holeData.tiles);
+        this.beginAimPhase();
+      },
+
+      updatePlayerControls: function() {
+        const p = GameState.players[this.currentPlayerIndex] || GameState.players[0];
+        const isReady = p && p.intent.targetHex && p.intent.shape;
+        const isIntent = GameState.phase === 'intent'; const isFinished = GameState.phase === 'finished';
+
+        const playBtn = document.getElementById('btn-play');
+        playBtn.disabled = !isReady || !isIntent || p.isBot; playBtn.style.display = isFinished ? 'none' : 'block';
+        if (p) playBtn.style.setProperty('--btn-color', p.color.base);
+        playBtn.innerText = this.currentPlayerIndex === GameState.players.length - 1 ? "Simulate Shots" : "Lock In Shot";
+
+        const resetBtn = document.getElementById('btn-reset');
+        resetBtn.style.display = isFinished ? 'block' : 'none'; resetBtn.innerText = GameState.currentHole >= GameState.totalHoles ? "Finish" : "Next Hole";
+        document.querySelectorAll('.icon-btn').forEach(btn => btn.disabled = !isIntent || p.isBot);
+
+        if (p && !p.isBot) {
+            const club = CONFIG.CLUBS[GameState.club]; const traj = club.traj[p.intent.trajectory || 'LOW'];
+            document.getElementById('ui-bounce').innerText = `${traj.bounce[0]}-${traj.bounce[1]}`; document.getElementById('ui-roll').innerText = `${traj.roll[0]}-${traj.roll[1]}`;
+        }
+      },
+
+      generateHoleStats: function() {
+        const type = HexUtils.randInt(1, 3);
+        if (type === 1) { GameState.yardage = HexUtils.randInt(100, 130); GameState.club = "WEDGE"; }
+        else if (type === 2) { GameState.yardage = HexUtils.randInt(150, 180); GameState.club = "IRON"; }
+        else { GameState.yardage = HexUtils.randInt(200, 230); GameState.club = "WOOD"; }
+      },
+
+      rollWind: function() {
+        const dirs = Object.keys(CONFIG.DIR); const randDir = dirs[Math.floor(Math.random() * dirs.length)];
+        const windDistribution = [0, 1, 1, 2, 2, 2, 3, 3, 4]; const baseStr = windDistribution[Math.floor(Math.random() * windDistribution.length)];
+        GameState.wind = { dir: randDir, min: baseStr, max: baseStr + 1 };
+      },
+
+      toggleScorecard: function() {
+        const modal = document.getElementById('scorecard-modal');
+        if (modal.style.display === 'flex') modal.style.display = 'none';
+        else {
+          const thead = document.getElementById('scorecard-head');
+          let headHtml = `<th>Hole</th><th>Yards</th>`; GameState.players.forEach(p => { headHtml += `<th style="color: ${p.color.base}">${p.name}</th>`; }); thead.innerHTML = headHtml;
+          const tbody = document.getElementById('scorecard-body'), tfoot = document.getElementById('scorecard-foot');
+
+          if (GameState.history.length === 0) { tbody.innerHTML = `<tr><td colspan="${2 + GameState.players.length}">No holes completed yet...</td></tr>`; tfoot.innerHTML = ''; } 
+          else {
+              tbody.innerHTML = GameState.history.map(h => {
+                  let row = `<tr><td>${h.hole}</td><td>${h.yds}y</td>`;
+                  GameState.players.forEach(p => { const scoreObj = h.scores.find(s => s.playerId === p.id); row += `<td>${scoreObj ? scoreObj.score : '-'}</td>`; });
+                  return row + `</tr>`;
+              }).join('');
+              let footHtml = `<tr style="border-top: 2px dashed var(--ink);"><th colspan="2" style="text-align: right; font-size: 20px;">Totals:</th>`;
+              GameState.players.forEach(p => footHtml += `<th style="font-size: 20px; color: ${p.color.base};">${p.totalScore}</th>`);
+              tfoot.innerHTML = footHtml + `</tr>`;
+          }
+          
+          const closeBtn = document.getElementById('scorecard-close-btn');
+          if (GameState.phase === 'gameover') { closeBtn.innerText = "Play Again"; closeBtn.style.background = CONFIG.COLORS.win; closeBtn.onclick = () => location.reload(); } 
+          else { closeBtn.innerText = "Close"; closeBtn.style.background = CONFIG.COLORS.lose; closeBtn.onclick = () => this.toggleScorecard(); }
+          modal.style.display = 'flex';
+        }
+      }
+    };
+
+    /* =========================================
+       7. MAP EDITOR 
+       ========================================= */
+    const EditorController = {
+        tiles: [], mode: 'terrain',
+        terrainCycle: ['green', 'fairway', 'rough', 'sand', 'water', 'ob'],
+        arrowCycle: [null, 'North', 'North-East', 'South-East', 'South', 'South-West', 'North-West'],
+
+        start: function() {
+            document.getElementById('landing-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            document.getElementById('game-hud').style.display = 'none';
+            document.getElementById('game-footer').style.display = 'none';
+            document.getElementById('editor-toolbar').style.display = 'flex';
+
+            Viewport.init();
+            this.generateBlankGrid(9);
+            GridRenderer.render(this.tiles);
+            GridRenderer.updateBounds(this.tiles);
+        },
+
+        exit: function() {
+            document.getElementById('editor-toolbar').style.display = 'none';
+            document.getElementById('game-hud').style.display = 'flex';
+            document.getElementById('game-footer').style.display = 'flex';
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('landing-screen').style.display = 'flex';
+            document.getElementById('grid-layer').innerHTML = '';
+        },
+
+        setMode: function(mode) {
+            this.mode = mode;
+            document.getElementById('btn-edit-terrain').classList.toggle('active', mode === 'terrain');
+            document.getElementById('btn-edit-arrow').classList.toggle('active', mode === 'arrow');
+        },
+
+        generateBlankGrid: function(radius) {
+            this.tiles = [];
+            for (let q = -radius; q <= radius; q++) {
+                let r1 = Math.max(-radius, -q - radius);
+                let r2 = Math.min(radius, -q + radius);
+                for (let r = r1; r <= r2; r++) {
+                    let dist = Math.max(Math.abs(q), Math.abs(-q - r), Math.abs(r));
+                    let type = 'green';
+                    if (dist === radius) type = 'rough';
+                    else if (dist === radius - 1) type = 'fairway';
+                    this.tiles.push({ q, r, type: type, arrow: null });
+                }
+            }
+        },
+
+        onHexClick: function(q, r) {
+            if (Viewport.didPan) return;
+            const tile = this.tiles.find(t => t.q === q && t.r === r);
+            if (!tile) return;
+
+            if (this.mode === 'terrain') {
+                let idx = this.terrainCycle.indexOf(tile.type);
+                tile.type = this.terrainCycle[(idx + 1) % this.terrainCycle.length];
+            } else if (this.mode === 'arrow') {
+                let idx = this.arrowCycle.indexOf(tile.arrow);
+                tile.arrow = this.arrowCycle[(idx + 1) % this.arrowCycle.length];
+            }
+            GridRenderer.render(this.tiles);
+        },
+
+        export: function() {
+            const exportData = this.tiles.filter(t => t.type !== 'ob' || t.arrow).map(t => {
+                let obj = { q: t.q, r: t.r, type: t.type };
+                if (t.arrow) obj.arrow = t.arrow;
+                return obj;
+            });
+            const mapObject = { name: "Custom Map", tiles: exportData };
+            document.getElementById('export-textarea').value = JSON.stringify(mapObject, null, 0);
+            document.getElementById('export-modal').style.display = 'flex';
+        },
+        
+        copyExport: function() {
+            navigator.clipboard.writeText(document.getElementById('export-textarea').value).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+            });
+        },
+
+        closeExport: function() {
+            document.getElementById('export-modal').style.display = 'none';
+        }
+    };
+
+    /* =========================================
+       8. BOOTSTRAPPING & DATA
+       ========================================= */
+    const MAP_COLLECTION = [
+        {
+            name: "The Links",
+            tiles: [{"q":-9,"r":0,"type":"sand"},{"q":-9,"r":1,"type":"sand"},{"q":-9,"r":2,"type":"sand"},{"q":-9,"r":3,"type":"rough"},{"q":-9,"r":4,"type":"rough"},{"q":-9,"r":5,"type":"rough"},{"q":-9,"r":6,"type":"fairway"},{"q":-9,"r":7,"type":"fairway"},{"q":-9,"r":8,"type":"fairway"},{"q":-9,"r":9,"type":"fairway"},{"q":-8,"r":-1,"type":"sand"},{"q":-8,"r":0,"type":"sand"},{"q":-8,"r":1,"type":"sand"},{"q":-8,"r":2,"type":"sand"},{"q":-8,"r":3,"type":"rough"},{"q":-8,"r":4,"type":"rough"},{"q":-8,"r":5,"type":"fairway"},{"q":-8,"r":6,"type":"green"},{"q":-8,"r":7,"type":"green"},{"q":-8,"r":8,"type":"green"},{"q":-8,"r":9,"type":"fairway"},{"q":-7,"r":-2,"type":"sand"},{"q":-7,"r":-1,"type":"sand"},{"q":-7,"r":0,"type":"sand"},{"q":-7,"r":1,"type":"sand"},{"q":-7,"r":2,"type":"fairway"},{"q":-7,"r":3,"type":"fairway"},{"q":-7,"r":4,"type":"fairway"},{"q":-7,"r":5,"type":"green"},{"q":-7,"r":6,"type":"green"},{"q":-7,"r":7,"type":"green"},{"q":-7,"r":8,"type":"green"},{"q":-7,"r":9,"type":"fairway"},{"q":-6,"r":-3,"type":"rough"},{"q":-6,"r":-2,"type":"sand"},{"q":-6,"r":-1,"type":"sand"},{"q":-6,"r":0,"type":"sand"},{"q":-6,"r":1,"type":"green","arrow":"North"},{"q":-6,"r":2,"type":"green","arrow":"North"},{"q":-6,"r":3,"type":"green","arrow":"North"},{"q":-6,"r":4,"type":"green","arrow":"North"},{"q":-6,"r":5,"type":"green"},{"q":-6,"r":6,"type":"green"},{"q":-6,"r":7,"type":"green"},{"q":-6,"r":8,"type":"fairway"},{"q":-6,"r":9,"type":"rough"},{"q":-5,"r":-4,"type":"rough"},{"q":-5,"r":-3,"type":"fairway"},{"q":-5,"r":-2,"type":"green","arrow":"South-West"},{"q":-5,"r":-1,"type":"green","arrow":"North-West"},{"q":-5,"r":0,"type":"green","arrow":"North-West"},{"q":-5,"r":1,"type":"green","arrow":"North"},{"q":-5,"r":2,"type":"green"},{"q":-5,"r":3,"type":"green","arrow":"North-East"},{"q":-5,"r":4,"type":"green","arrow":"North-East"},{"q":-5,"r":5,"type":"green","arrow":"North-East"},{"q":-5,"r":6,"type":"green","arrow":"South-East"},{"q":-5,"r":7,"type":"green","arrow":"South-East"},{"q":-5,"r":8,"type":"fairway"},{"q":-5,"r":9,"type":"rough"},{"q":-4,"r":-5,"type":"rough"},{"q":-4,"r":-4,"type":"rough"},{"q":-4,"r":-3,"type":"fairway"},{"q":-4,"r":-2,"type":"green","arrow":"South-West"},{"q":-4,"r":-1,"type":"green","arrow":"North-West"},{"q":-4,"r":0,"type":"green","arrow":"North-West"},{"q":-4,"r":1,"type":"green"},{"q":-4,"r":2,"type":"green"},{"q":-4,"r":3,"type":"green","arrow":"North-East"},{"q":-4,"r":4,"type":"green","arrow":"North-East"},{"q":-4,"r":5,"type":"green","arrow":"South-East"},{"q":-4,"r":6,"type":"green","arrow":"South-East"},{"q":-4,"r":7,"type":"green"},{"q":-4,"r":8,"type":"fairway"},{"q":-4,"r":9,"type":"rough"},{"q":-3,"r":-6,"type":"rough"},{"q":-3,"r":-5,"type":"rough"},{"q":-3,"r":-4,"type":"fairway"},{"q":-3,"r":-3,"type":"green"},{"q":-3,"r":-2,"type":"green"},{"q":-3,"r":-1,"type":"green"},{"q":-3,"r":0,"type":"green"},{"q":-3,"r":1,"type":"green"},{"q":-3,"r":2,"type":"green"},{"q":-3,"r":3,"type":"green"},{"q":-3,"r":4,"type":"green"},{"q":-3,"r":5,"type":"green"},{"q":-3,"r":6,"type":"green"},{"q":-3,"r":7,"type":"green"},{"q":-3,"r":8,"type":"fairway"},{"q":-3,"r":9,"type":"water"},{"q":-2,"r":-7,"type":"rough"},{"q":-2,"r":-6,"type":"fairway"},{"q":-2,"r":-5,"type":"fairway"},{"q":-2,"r":-4,"type":"green","arrow":"North-East"},{"q":-2,"r":-3,"type":"green","arrow":"North"},{"q":-2,"r":-2,"type":"green"},{"q":-2,"r":-1,"type":"green"},{"q":-2,"r":0,"type":"green"},{"q":-2,"r":1,"type":"green"},{"q":-2,"r":2,"type":"green","arrow":"North-West"},{"q":-2,"r":3,"type":"green","arrow":"North-West"},{"q":-2,"r":4,"type":"green","arrow":"South-West"},{"q":-2,"r":5,"type":"green"},{"q":-2,"r":6,"type":"green"},{"q":-2,"r":7,"type":"fairway"},{"q":-2,"r":8,"type":"water"},{"q":-2,"r":9,"type":"rough"},{"q":-1,"r":-8,"type":"rough"},{"q":-1,"r":-7,"type":"fairway"},{"q":-1,"r":-6,"type":"green"},{"q":-1,"r":-5,"type":"green"},{"q":-1,"r":-4,"type":"green","arrow":"North-East"},{"q":-1,"r":-3,"type":"green","arrow":"North"},{"q":-1,"r":-2,"type":"green"},{"q":-1,"r":-1,"type":"green"},{"q":-1,"r":0,"type":"green"},{"q":-1,"r":1,"type":"green","arrow":"North"},{"q":-1,"r":2,"type":"green"},{"q":-1,"r":3,"type":"green"},{"q":-1,"r":4,"type":"green","arrow":"South"},{"q":-1,"r":5,"type":"green"},{"q":-1,"r":6,"type":"fairway"},{"q":-1,"r":7,"type":"fairway"},{"q":-1,"r":8,"type":"water"},{"q":-1,"r":9,"type":"rough"},{"q":0,"r":-9,"type":"rough"},{"q":0,"r":-8,"type":"fairway"},{"q":0,"r":-7,"type":"green"},{"q":0,"r":-6,"type":"green"},{"q":0,"r":-5,"type":"green"},{"q":0,"r":-4,"type":"green","arrow":"North-East"},{"q":0,"r":-3,"type":"green","arrow":"North"},{"q":0,"r":-2,"type":"green","arrow":"North"},{"q":0,"r":-1,"type":"green","arrow":"North"},{"q":0,"r":0,"type":"green","arrow":"North"},{"q":0,"r":1,"type":"green"},{"q":0,"r":2,"type":"green"},{"q":0,"r":3,"type":"green"},{"q":0,"r":4,"type":"green","arrow":"South"},{"q":0,"r":5,"type":"green","arrow":"South-East"},{"q":0,"r":6,"type":"fairway"},{"q":0,"r":7,"type":"fairway"},{"q":0,"r":8,"type":"water"},{"q":0,"r":9,"type":"rough"},{"q":1,"r":-9,"type":"sand"},{"q":1,"r":-8,"type":"sand"},{"q":1,"r":-7,"type":"green"},{"q":1,"r":-6,"type":"green"},{"q":1,"r":-5,"type":"green"},{"q":1,"r":-4,"type":"green","arrow":"North"},{"q":1,"r":-3,"type":"green","arrow":"North"},{"q":1,"r":-2,"type":"green","arrow":"North"},{"q":1,"r":-1,"type":"green","arrow":"North"},{"q":1,"r":0,"type":"green","arrow":"North"},{"q":1,"r":1,"type":"green"},{"q":1,"r":2,"type":"green"},{"q":1,"r":3,"type":"green","arrow":"South-East"},{"q":1,"r":4,"type":"green","arrow":"South-East"},{"q":1,"r":5,"type":"water"},{"q":1,"r":6,"type":"water"},{"q":1,"r":7,"type":"water"},{"q":1,"r":8,"type":"rough"},{"q":2,"r":-9,"type":"sand"},{"q":2,"r":-8,"type":"sand"},{"q":2,"r":-7,"type":"sand"},{"q":2,"r":-6,"type":"sand"},{"q":2,"r":-5,"type":"sand"},{"q":2,"r":-4,"type":"green","arrow":"North"},{"q":2,"r":-3,"type":"green","arrow":"North"},{"q":2,"r":-2,"type":"green"},{"q":2,"r":-1,"type":"green"},{"q":2,"r":0,"type":"green","arrow":"North-East"},{"q":2,"r":1,"type":"green","arrow":"South-East"},{"q":2,"r":2,"type":"green","arrow":"South-East"},{"q":2,"r":3,"type":"green","arrow":"South"},{"q":2,"r":4,"type":"water"},{"q":2,"r":5,"type":"fairway"},{"q":2,"r":6,"type":"fairway"},{"q":2,"r":7,"type":"rough"},{"q":3,"r":-9,"type":"sand"},{"q":3,"r":-8,"type":"sand"},{"q":3,"r":-7,"type":"sand"},{"q":3,"r":-6,"type":"sand"},{"q":3,"r":-5,"type":"green","arrow":"North"},{"q":3,"r":-4,"type":"green","arrow":"North"},{"q":3,"r":-3,"type":"green"},{"q":3,"r":-2,"type":"green"},{"q":3,"r":-1,"type":"green"},{"q":3,"r":0,"type":"green"},{"q":3,"r":1,"type":"green"},{"q":3,"r":2,"type":"green","arrow":"South"},{"q":3,"r":3,"type":"green","arrow":"South"},{"q":3,"r":4,"type":"water"},{"q":3,"r":5,"type":"fairway"},{"q":3,"r":6,"type":"rough"},{"q":4,"r":-9,"type":"sand"},{"q":4,"r":-8,"type":"sand"},{"q":4,"r":-7,"type":"green","arrow":"North"},{"q":4,"r":-6,"type":"green","arrow":"North"},{"q":4,"r":-5,"type":"green","arrow":"North"},{"q":4,"r":-4,"type":"green"},{"q":4,"r":-3,"type":"green"},{"q":4,"r":-2,"type":"green"},{"q":4,"r":-1,"type":"green"},{"q":4,"r":0,"type":"green"},{"q":4,"r":1,"type":"green","arrow":"South-East"},{"q":4,"r":2,"type":"green","arrow":"South"},{"q":4,"r":3,"type":"green","arrow":"South"},{"q":4,"r":4,"type":"water"},{"q":4,"r":5,"type":"rough"},{"q":5,"r":-9,"type":"sand"},{"q":5,"r":-8,"type":"sand"},{"q":5,"r":-7,"type":"green","arrow":"North"},{"q":5,"r":-6,"type":"green","arrow":"North"},{"q":5,"r":-5,"type":"green"},{"q":5,"r":-4,"type":"green"},{"q":5,"r":-3,"type":"green"},{"q":5,"r":-2,"type":"green"},{"q":5,"r":-1,"type":"green"},{"q":5,"r":0,"type":"green","arrow":"South-East"},{"q":5,"r":1,"type":"green","arrow":"South-East"},{"q":5,"r":2,"type":"green","arrow":"South-East"},{"q":5,"r":3,"type":"water"},{"q":5,"r":4,"type":"water"},{"q":6,"r":-9,"type":"sand"},{"q":6,"r":-8,"type":"fairway"},{"q":6,"r":-7,"type":"green","arrow":"North-East"},{"q":6,"r":-6,"type":"green","arrow":"North-East"},{"q":6,"r":-5,"type":"green","arrow":"North-East"},{"q":6,"r":-4,"type":"green","arrow":"North-East"},{"q":6,"r":-3,"type":"green"},{"q":6,"r":-2,"type":"green","arrow":"South-East"},{"q":6,"r":-1,"type":"green","arrow":"South-East"},{"q":6,"r":0,"type":"green","arrow":"South-East"},{"q":6,"r":1,"type":"water"},{"q":6,"r":2,"type":"water"},{"q":6,"r":3,"type":"water"},{"q":7,"r":-9,"type":"fairway"},{"q":7,"r":-8,"type":"fairway"},{"q":7,"r":-7,"type":"green","arrow":"North-East"},{"q":7,"r":-6,"type":"green","arrow":"North-East"},{"q":7,"r":-5,"type":"green","arrow":"North-East"},{"q":7,"r":-4,"type":"green","arrow":"North-East"},{"q":7,"r":-3,"type":"green","arrow":"South-East"},{"q":7,"r":-2,"type":"green","arrow":"South-East"},{"q":7,"r":-1,"type":"green","arrow":"South-East"},{"q":7,"r":0,"type":"water"},{"q":7,"r":1,"type":"water"},{"q":7,"r":2,"type":"water"},{"q":8,"r":-9,"type":"fairway"},{"q":8,"r":-8,"type":"fairway"},{"q":8,"r":-7,"type":"fairway"},{"q":8,"r":-6,"type":"fairway"},{"q":8,"r":-5,"type":"fairway"},{"q":8,"r":-4,"type":"fairway"},{"q":8,"r":-3,"type":"fairway"},{"q":8,"r":-2,"type":"fairway"},{"q":8,"r":-1,"type":"water"},{"q":8,"r":0,"type":"water"},{"q":8,"r":1,"type":"water"},{"q":9,"r":-9,"type":"fairway"},{"q":9,"r":-8,"type":"fairway"},{"q":9,"r":-7,"type":"fairway"},{"q":9,"r":-6,"type":"rough"},{"q":9,"r":-5,"type":"rough"},{"q":9,"r":-4,"type":"rough"},{"q":9,"r":-3,"type":"rough"},{"q":9,"r":-2,"type":"rough"},{"q":9,"r":-1,"type":"water"},{"q":9,"r":0,"type":"water"}]
+        },
+        {"name":"River Run","tiles":[{"q":-9,"r":0,"type":"sand"},{"q":-9,"r":1,"type":"sand"},{"q":-9,"r":2,"type":"rough","arrow":"North"},{"q":-9,"r":3,"type":"rough","arrow":"South-East"},{"q":-9,"r":4,"type":"rough"},{"q":-9,"r":5,"type":"fairway"},{"q":-9,"r":6,"type":"fairway"},{"q":-9,"r":7,"type":"fairway"},{"q":-9,"r":8,"type":"fairway"},{"q":-9,"r":9,"type":"fairway"},{"q":-8,"r":-1,"type":"sand"},{"q":-8,"r":0,"type":"sand"},{"q":-8,"r":1,"type":"rough","arrow":"North"},{"q":-8,"r":2,"type":"fairway","arrow":"South-East"},{"q":-8,"r":3,"type":"fairway","arrow":"South-East"},{"q":-8,"r":4,"type":"fairway"},{"q":-8,"r":5,"type":"fairway"},{"q":-8,"r":6,"type":"fairway"},{"q":-8,"r":7,"type":"fairway"},{"q":-8,"r":8,"type":"fairway"},{"q":-8,"r":9,"type":"fairway"},{"q":-7,"r":-2,"type":"rough","arrow":"South-West"},{"q":-7,"r":-1,"type":"rough","arrow":"South-West"},{"q":-7,"r":0,"type":"rough","arrow":"North-West"},{"q":-7,"r":1,"type":"fairway","arrow":"South-East"},{"q":-7,"r":2,"type":"green"},{"q":-7,"r":3,"type":"green"},{"q":-7,"r":4,"type":"green","arrow":"North"},{"q":-7,"r":5,"type":"green","arrow":"North-West"},{"q":-7,"r":6,"type":"green","arrow":"North-West"},{"q":-7,"r":7,"type":"green","arrow":"South-West"},{"q":-7,"r":8,"type":"fairway"},{"q":-7,"r":9,"type":"fairway"},{"q":-6,"r":-3,"type":"rough","arrow":"South-East"},{"q":-6,"r":-2,"type":"fairway","arrow":"South-East"},{"q":-6,"r":-1,"type":"fairway","arrow":"South-East"},{"q":-6,"r":0,"type":"fairway","arrow":"South-East"},{"q":-6,"r":1,"type":"green"},{"q":-6,"r":2,"type":"green"},{"q":-6,"r":3,"type":"green","arrow":"North"},{"q":-6,"r":4,"type":"green"},{"q":-6,"r":5,"type":"green"},{"q":-6,"r":6,"type":"green"},{"q":-6,"r":7,"type":"green","arrow":"South"},{"q":-6,"r":8,"type":"fairway"},{"q":-6,"r":9,"type":"fairway"},{"q":-5,"r":-4,"type":"rough"},{"q":-5,"r":-3,"type":"fairway","arrow":"South-East"},{"q":-5,"r":-2,"type":"green"},{"q":-5,"r":-1,"type":"green"},{"q":-5,"r":0,"type":"green"},{"q":-5,"r":1,"type":"green"},{"q":-5,"r":2,"type":"green"},{"q":-5,"r":3,"type":"green","arrow":"North-East"},{"q":-5,"r":4,"type":"green"},{"q":-5,"r":5,"type":"green"},{"q":-5,"r":6,"type":"green","arrow":"South"},{"q":-5,"r":7,"type":"fairway"},{"q":-5,"r":8,"type":"fairway"},{"q":-5,"r":9,"type":"fairway"},{"q":-4,"r":-5,"type":"rough"},{"q":-4,"r":-4,"type":"fairway"},{"q":-4,"r":-3,"type":"green","arrow":"North-East"},{"q":-4,"r":-2,"type":"green"},{"q":-4,"r":-1,"type":"green"},{"q":-4,"r":0,"type":"green"},{"q":-4,"r":1,"type":"green","arrow":"South-East"},{"q":-4,"r":2,"type":"green","arrow":"South-East"},{"q":-4,"r":3,"type":"green","arrow":"South-East"},{"q":-4,"r":4,"type":"green","arrow":"North-East"},{"q":-4,"r":5,"type":"green","arrow":"North-East"},{"q":-4,"r":6,"type":"green","arrow":"South-East"},{"q":-4,"r":7,"type":"fairway"},{"q":-4,"r":8,"type":"fairway"},{"q":-4,"r":9,"type":"fairway"},{"q":-3,"r":-6,"type":"rough"},{"q":-3,"r":-5,"type":"fairway"},{"q":-3,"r":-4,"type":"green","arrow":"North-East"},{"q":-3,"r":-3,"type":"green","arrow":"North-East"},{"q":-3,"r":-2,"type":"green","arrow":"North-East"},{"q":-3,"r":-1,"type":"green","arrow":"North-East"},{"q":-3,"r":0,"type":"green","arrow":"South-East"},{"q":-3,"r":1,"type":"green","arrow":"South-East"},{"q":-3,"r":2,"type":"green","arrow":"South-East"},{"q":-3,"r":3,"type":"green","arrow":"North-East"},{"q":-3,"r":4,"type":"green","arrow":"North-East"},{"q":-3,"r":5,"type":"green","arrow":"North-East"},{"q":-3,"r":6,"type":"green","arrow":"South-East"},{"q":-3,"r":7,"type":"fairway"},{"q":-3,"r":8,"type":"fairway"},{"q":-3,"r":9,"type":"fairway"},{"q":-2,"r":-7,"type":"rough"},{"q":-2,"r":-6,"type":"fairway"},{"q":-2,"r":-5,"type":"green"},{"q":-2,"r":-4,"type":"green","arrow":"North-East"},{"q":-2,"r":-3,"type":"green","arrow":"North-East"},{"q":-2,"r":-2,"type":"green","arrow":"South-East"},{"q":-2,"r":-1,"type":"green","arrow":"North-East"},{"q":-2,"r":0,"type":"green","arrow":"South-East"},{"q":-2,"r":1,"type":"green"},{"q":-2,"r":2,"type":"green"},{"q":-2,"r":3,"type":"green"},{"q":-2,"r":4,"type":"green","arrow":"North-East"},{"q":-2,"r":5,"type":"green","arrow":"South-East"},{"q":-2,"r":6,"type":"green","arrow":"South-East"},{"q":-2,"r":7,"type":"fairway","arrow":"North-East"},{"q":-2,"r":8,"type":"fairway","arrow":"North-East"},{"q":-2,"r":9,"type":"fairway"},{"q":-1,"r":-8,"type":"rough"},{"q":-1,"r":-7,"type":"fairway"},{"q":-1,"r":-6,"type":"green"},{"q":-1,"r":-5,"type":"green"},{"q":-1,"r":-4,"type":"green"},{"q":-1,"r":-3,"type":"green","arrow":"South-East"},{"q":-1,"r":-2,"type":"water"},{"q":-1,"r":-1,"type":"water"},{"q":-1,"r":0,"type":"green"},{"q":-1,"r":1,"type":"green"},{"q":-1,"r":2,"type":"green"},{"q":-1,"r":3,"type":"green"},{"q":-1,"r":4,"type":"green"},{"q":-1,"r":5,"type":"water"},{"q":-1,"r":6,"type":"water"},{"q":-1,"r":7,"type":"water"},{"q":-1,"r":8,"type":"fairway","arrow":"North-East"},{"q":-1,"r":9,"type":"fairway","arrow":"North-East"},{"q":0,"r":-9,"type":"rough"},{"q":0,"r":-8,"type":"rough"},{"q":0,"r":-7,"type":"fairway"},{"q":0,"r":-6,"type":"green"},{"q":0,"r":-5,"type":"green"},{"q":0,"r":-4,"type":"green"},{"q":0,"r":-3,"type":"water"},{"q":0,"r":-2,"type":"green","arrow":"North-West"},{"q":0,"r":-1,"type":"water"},{"q":0,"r":0,"type":"green"},{"q":0,"r":1,"type":"green"},{"q":0,"r":2,"type":"green"},{"q":0,"r":3,"type":"green"},{"q":0,"r":4,"type":"water"},{"q":0,"r":5,"type":"fairway","arrow":"North-West"},{"q":0,"r":6,"type":"fairway","arrow":"South-West"},{"q":0,"r":7,"type":"water"},{"q":0,"r":8,"type":"water"},{"q":0,"r":9,"type":"water"},{"q":1,"r":-9,"type":"rough"},{"q":1,"r":-8,"type":"fairway"},{"q":1,"r":-7,"type":"green"},{"q":1,"r":-6,"type":"green"},{"q":1,"r":-5,"type":"green"},{"q":1,"r":-4,"type":"green"},{"q":1,"r":-3,"type":"water"},{"q":1,"r":-2,"type":"green","arrow":"North-West"},{"q":1,"r":-1,"type":"water"},{"q":1,"r":0,"type":"water"},{"q":1,"r":1,"type":"water"},{"q":1,"r":2,"type":"green","arrow":"South-East"},{"q":1,"r":3,"type":"water"},{"q":1,"r":4,"type":"fairway","arrow":"North-West"},{"q":1,"r":5,"type":"fairway","arrow":"South-East"},{"q":1,"r":6,"type":"fairway","arrow":"South-West"},{"q":1,"r":7,"type":"fairway","arrow":"South-West"},{"q":1,"r":8,"type":"fairway","arrow":"North-West"},{"q":2,"r":-9,"type":"rough"},{"q":2,"r":-8,"type":"fairway"},{"q":2,"r":-7,"type":"green"},{"q":2,"r":-6,"type":"water"},{"q":2,"r":-5,"type":"water"},{"q":2,"r":-4,"type":"water"},{"q":2,"r":-3,"type":"green","arrow":"North-West"},{"q":2,"r":-2,"type":"green","arrow":"South-West"},{"q":2,"r":-1,"type":"green","arrow":"South-West"},{"q":2,"r":0,"type":"green","arrow":"South-West"},{"q":2,"r":1,"type":"water"},{"q":2,"r":2,"type":"water"},{"q":2,"r":3,"type":"fairway","arrow":"North"},{"q":2,"r":4,"type":"fairway","arrow":"South-East"},{"q":2,"r":5,"type":"sand"},{"q":2,"r":6,"type":"sand"},{"q":2,"r":7,"type":"sand"},{"q":3,"r":-9,"type":"rough"},{"q":3,"r":-8,"type":"fairway"},{"q":3,"r":-7,"type":"water"},{"q":3,"r":-6,"type":"green","arrow":"North-West"},{"q":3,"r":-5,"type":"green","arrow":"South-West"},{"q":3,"r":-4,"type":"green","arrow":"North-West"},{"q":3,"r":-3,"type":"green"},{"q":3,"r":-2,"type":"green"},{"q":3,"r":-1,"type":"green"},{"q":3,"r":0,"type":"green","arrow":"South-West"},{"q":3,"r":1,"type":"green","arrow":"South-West"},{"q":3,"r":2,"type":"green","arrow":"North-West"},{"q":3,"r":3,"type":"fairway","arrow":"South"},{"q":3,"r":4,"type":"sand"},{"q":3,"r":5,"type":"sand"},{"q":3,"r":6,"type":"sand"},{"q":4,"r":-9,"type":"water"},{"q":4,"r":-8,"type":"water"},{"q":4,"r":-7,"type":"green","arrow":"North-West"},{"q":4,"r":-6,"type":"green"},{"q":4,"r":-5,"type":"green"},{"q":4,"r":-4,"type":"green"},{"q":4,"r":-3,"type":"green"},{"q":4,"r":-2,"type":"green"},{"q":4,"r":-1,"type":"green","arrow":"North"},{"q":4,"r":0,"type":"green"},{"q":4,"r":1,"type":"green"},{"q":4,"r":2,"type":"green"},{"q":4,"r":3,"type":"fairway","arrow":"South"},{"q":4,"r":4,"type":"sand"},{"q":4,"r":5,"type":"sand"},{"q":5,"r":-9,"type":"rough","arrow":"South-West"},{"q":5,"r":-8,"type":"fairway","arrow":"North-West"},{"q":5,"r":-7,"type":"green"},{"q":5,"r":-6,"type":"green"},{"q":5,"r":-5,"type":"green"},{"q":5,"r":-4,"type":"green"},{"q":5,"r":-3,"type":"green"},{"q":5,"r":-2,"type":"green","arrow":"North"},{"q":5,"r":-1,"type":"green"},{"q":5,"r":0,"type":"green"},{"q":5,"r":1,"type":"green"},{"q":5,"r":2,"type":"fairway","arrow":"South"},{"q":5,"r":3,"type":"fairway","arrow":"South"},{"q":5,"r":4,"type":"sand"},{"q":6,"r":-9,"type":"rough"},{"q":6,"r":-8,"type":"fairway"},{"q":6,"r":-7,"type":"fairway"},{"q":6,"r":-6,"type":"fairway"},{"q":6,"r":-5,"type":"green"},{"q":6,"r":-4,"type":"green"},{"q":6,"r":-3,"type":"green"},{"q":6,"r":-2,"type":"green","arrow":"North"},{"q":6,"r":-1,"type":"green"},{"q":6,"r":0,"type":"green"},{"q":6,"r":1,"type":"fairway","arrow":"South-East"},{"q":6,"r":2,"type":"fairway","arrow":"South"},{"q":6,"r":3,"type":"fairway","arrow":"South-West"},{"q":7,"r":-9,"type":"rough"},{"q":7,"r":-8,"type":"rough"},{"q":7,"r":-7,"type":"rough"},{"q":7,"r":-6,"type":"fairway"},{"q":7,"r":-5,"type":"green"},{"q":7,"r":-4,"type":"green"},{"q":7,"r":-3,"type":"green"},{"q":7,"r":-2,"type":"green","arrow":"North"},{"q":7,"r":-1,"type":"green"},{"q":7,"r":0,"type":"fairway","arrow":"South-East"},{"q":7,"r":1,"type":"fairway","arrow":"South-East"},{"q":7,"r":2,"type":"fairway","arrow":"South-East"},{"q":8,"r":-9,"type":"rough"},{"q":8,"r":-8,"type":"rough"},{"q":8,"r":-7,"type":"rough"},{"q":8,"r":-6,"type":"fairway"},{"q":8,"r":-5,"type":"fairway"},{"q":8,"r":-4,"type":"fairway"},{"q":8,"r":-3,"type":"fairway","arrow":"South-East"},{"q":8,"r":-2,"type":"fairway","arrow":"South-East"},{"q":8,"r":-1,"type":"fairway","arrow":"South-East"},{"q":8,"r":0,"type":"fairway","arrow":"South-East"},{"q":8,"r":1,"type":"fairway","arrow":"South-East"},{"q":9,"r":-9,"type":"rough"},{"q":9,"r":-8,"type":"rough"},{"q":9,"r":-7,"type":"rough"},{"q":9,"r":-6,"type":"rough"},{"q":9,"r":-5,"type":"rough"},{"q":9,"r":-4,"type":"rough"},{"q":9,"r":-3,"type":"fairway","arrow":"South-East"},{"q":9,"r":-2,"type":"fairway","arrow":"South-East"},{"q":9,"r":-1,"type":"fairway","arrow":"South-East"},{"q":9,"r":0,"type":"fairway","arrow":"South-East"}]},
+        {"name":"The 17th","tiles":[{"q":-9,"r":0,"type":"water"},{"q":-9,"r":1,"type":"water"},{"q":-9,"r":2,"type":"water"},{"q":-9,"r":3,"type":"water"},{"q":-9,"r":4,"type":"water"},{"q":-9,"r":5,"type":"water"},{"q":-9,"r":6,"type":"water"},{"q":-9,"r":7,"type":"water"},{"q":-9,"r":8,"type":"water"},{"q":-9,"r":9,"type":"water"},{"q":-8,"r":-1,"type":"water"},{"q":-8,"r":0,"type":"water"},{"q":-8,"r":1,"type":"water"},{"q":-8,"r":2,"type":"water"},{"q":-8,"r":3,"type":"water"},{"q":-8,"r":4,"type":"water"},{"q":-8,"r":5,"type":"water"},{"q":-8,"r":6,"type":"water"},{"q":-8,"r":7,"type":"water"},{"q":-8,"r":8,"type":"water"},{"q":-8,"r":9,"type":"water"},{"q":-7,"r":-2,"type":"water"},{"q":-7,"r":-1,"type":"water"},{"q":-7,"r":0,"type":"water"},{"q":-7,"r":1,"type":"water"},{"q":-7,"r":2,"type":"water"},{"q":-7,"r":3,"type":"water"},{"q":-7,"r":4,"type":"water"},{"q":-7,"r":5,"type":"water"},{"q":-7,"r":6,"type":"water"},{"q":-7,"r":7,"type":"water"},{"q":-7,"r":8,"type":"water"},{"q":-7,"r":9,"type":"water"},{"q":-6,"r":-3,"type":"water"},{"q":-6,"r":-2,"type":"water"},{"q":-6,"r":-1,"type":"water"},{"q":-6,"r":0,"type":"water"},{"q":-6,"r":1,"type":"water"},{"q":-6,"r":2,"type":"water"},{"q":-6,"r":3,"type":"water"},{"q":-6,"r":4,"type":"water"},{"q":-6,"r":5,"type":"water"},{"q":-6,"r":6,"type":"water"},{"q":-6,"r":7,"type":"water"},{"q":-6,"r":8,"type":"water"},{"q":-6,"r":9,"type":"water"},{"q":-5,"r":-4,"type":"water"},{"q":-5,"r":-3,"type":"water"},{"q":-5,"r":-2,"type":"water"},{"q":-5,"r":-1,"type":"water"},{"q":-5,"r":0,"type":"water"},{"q":-5,"r":1,"type":"fairway"},{"q":-5,"r":2,"type":"fairway"},{"q":-5,"r":3,"type":"fairway"},{"q":-5,"r":4,"type":"fairway"},{"q":-5,"r":5,"type":"fairway"},{"q":-5,"r":6,"type":"water"},{"q":-5,"r":7,"type":"water"},{"q":-5,"r":8,"type":"water"},{"q":-5,"r":9,"type":"water"},{"q":-4,"r":-5,"type":"water"},{"q":-4,"r":-4,"type":"water"},{"q":-4,"r":-3,"type":"water"},{"q":-4,"r":-2,"type":"water"},{"q":-4,"r":-1,"type":"water"},{"q":-4,"r":0,"type":"fairway"},{"q":-4,"r":1,"type":"green","arrow":"South-West"},{"q":-4,"r":2,"type":"green","arrow":"South-West"},{"q":-4,"r":3,"type":"green"},{"q":-4,"r":4,"type":"green"},{"q":-4,"r":5,"type":"fairway"},{"q":-4,"r":6,"type":"water"},{"q":-4,"r":7,"type":"water"},{"q":-4,"r":8,"type":"water"},{"q":-4,"r":9,"type":"water"},{"q":-3,"r":-6,"type":"water"},{"q":-3,"r":-5,"type":"water"},{"q":-3,"r":-4,"type":"water"},{"q":-3,"r":-3,"type":"water"},{"q":-3,"r":-2,"type":"water"},{"q":-3,"r":-1,"type":"fairway"},{"q":-3,"r":0,"type":"green"},{"q":-3,"r":1,"type":"green","arrow":"South-West"},{"q":-3,"r":2,"type":"green","arrow":"South-West"},{"q":-3,"r":3,"type":"green"},{"q":-3,"r":4,"type":"green"},{"q":-3,"r":5,"type":"fairway"},{"q":-3,"r":6,"type":"water"},{"q":-3,"r":7,"type":"water"},{"q":-3,"r":8,"type":"water"},{"q":-3,"r":9,"type":"water"},{"q":-2,"r":-7,"type":"fairway"},{"q":-2,"r":-6,"type":"water"},{"q":-2,"r":-5,"type":"water"},{"q":-2,"r":-4,"type":"water"},{"q":-2,"r":-3,"type":"water"},{"q":-2,"r":-2,"type":"fairway"},{"q":-2,"r":-1,"type":"green"},{"q":-2,"r":0,"type":"green"},{"q":-2,"r":1,"type":"green","arrow":"South-West"},{"q":-2,"r":2,"type":"green","arrow":"South-West"},{"q":-2,"r":3,"type":"green"},{"q":-2,"r":4,"type":"green"},{"q":-2,"r":5,"type":"fairway"},{"q":-2,"r":6,"type":"water"},{"q":-2,"r":7,"type":"water"},{"q":-2,"r":8,"type":"water"},{"q":-2,"r":9,"type":"water"},{"q":-1,"r":-8,"type":"fairway"},{"q":-1,"r":-7,"type":"fairway"},{"q":-1,"r":-6,"type":"fairway"},{"q":-1,"r":-5,"type":"fairway"},{"q":-1,"r":-4,"type":"fairway"},{"q":-1,"r":-3,"type":"fairway"},{"q":-1,"r":-2,"type":"green"},{"q":-1,"r":-1,"type":"green"},{"q":-1,"r":0,"type":"green"},{"q":-1,"r":1,"type":"green","arrow":"South-West"},{"q":-1,"r":2,"type":"green","arrow":"South-West"},{"q":-1,"r":3,"type":"green","arrow":"South-West"},{"q":-1,"r":4,"type":"fairway","arrow":"South-West"},{"q":-1,"r":5,"type":"fairway","arrow":"South-West"},{"q":-1,"r":6,"type":"water"},{"q":-1,"r":7,"type":"water"},{"q":-1,"r":8,"type":"water"},{"q":-1,"r":9,"type":"water"},{"q":0,"r":-9,"type":"fairway"},{"q":0,"r":-8,"type":"fairway"},{"q":0,"r":-7,"type":"fairway"},{"q":0,"r":-6,"type":"fairway"},{"q":0,"r":-5,"type":"fairway"},{"q":0,"r":-4,"type":"fairway"},{"q":0,"r":-3,"type":"green"},{"q":0,"r":-2,"type":"green"},{"q":0,"r":-1,"type":"green"},{"q":0,"r":0,"type":"green"},{"q":0,"r":1,"type":"green","arrow":"South-West"},{"q":0,"r":2,"type":"green","arrow":"South"},{"q":0,"r":3,"type":"fairway","arrow":"South"},{"q":0,"r":4,"type":"sand"},{"q":0,"r":5,"type":"fairway","arrow":"South"},{"q":0,"r":6,"type":"water"},{"q":0,"r":7,"type":"water"},{"q":0,"r":8,"type":"water"},{"q":0,"r":9,"type":"water"},{"q":1,"r":-9,"type":"water"},{"q":1,"r":-8,"type":"water"},{"q":1,"r":-7,"type":"water"},{"q":1,"r":-6,"type":"water"},{"q":1,"r":-5,"type":"water"},{"q":1,"r":-4,"type":"fairway"},{"q":1,"r":-3,"type":"green"},{"q":1,"r":-2,"type":"green"},{"q":1,"r":-1,"type":"green"},{"q":1,"r":0,"type":"green","arrow":"South"},{"q":1,"r":1,"type":"green","arrow":"South-East"},{"q":1,"r":2,"type":"green"},{"q":1,"r":3,"type":"fairway","arrow":"South-East"},{"q":1,"r":4,"type":"fairway","arrow":"South-East"},{"q":1,"r":5,"type":"water"},{"q":1,"r":6,"type":"water"},{"q":1,"r":7,"type":"water"},{"q":1,"r":8,"type":"water"},{"q":2,"r":-9,"type":"water"},{"q":2,"r":-8,"type":"water"},{"q":2,"r":-7,"type":"water"},{"q":2,"r":-6,"type":"water"},{"q":2,"r":-5,"type":"water"},{"q":2,"r":-4,"type":"fairway"},{"q":2,"r":-3,"type":"green"},{"q":2,"r":-2,"type":"green"},{"q":2,"r":-1,"type":"green","arrow":"South"},{"q":2,"r":0,"type":"green","arrow":"South-East"},{"q":2,"r":1,"type":"green"},{"q":2,"r":2,"type":"green"},{"q":2,"r":3,"type":"fairway"},{"q":2,"r":4,"type":"water"},{"q":2,"r":5,"type":"water"},{"q":2,"r":6,"type":"water"},{"q":2,"r":7,"type":"water"},{"q":3,"r":-9,"type":"water"},{"q":3,"r":-8,"type":"water"},{"q":3,"r":-7,"type":"water"},{"q":3,"r":-6,"type":"water"},{"q":3,"r":-5,"type":"water"},{"q":3,"r":-4,"type":"fairway"},{"q":3,"r":-3,"type":"green"},{"q":3,"r":-2,"type":"green","arrow":"South"},{"q":3,"r":-1,"type":"green","arrow":"South-East"},{"q":3,"r":0,"type":"green"},{"q":3,"r":1,"type":"green"},{"q":3,"r":2,"type":"fairway"},{"q":3,"r":3,"type":"water"},{"q":3,"r":4,"type":"water"},{"q":3,"r":5,"type":"water"},{"q":3,"r":6,"type":"water"},{"q":4,"r":-9,"type":"water"},{"q":4,"r":-8,"type":"water"},{"q":4,"r":-7,"type":"water"},{"q":4,"r":-6,"type":"water"},{"q":4,"r":-5,"type":"water"},{"q":4,"r":-4,"type":"fairway"},{"q":4,"r":-3,"type":"green","arrow":"South"},{"q":4,"r":-2,"type":"green","arrow":"South"},{"q":4,"r":-1,"type":"green"},{"q":4,"r":0,"type":"green"},{"q":4,"r":1,"type":"fairway"},{"q":4,"r":2,"type":"water"},{"q":4,"r":3,"type":"water"},{"q":4,"r":4,"type":"water"},{"q":4,"r":5,"type":"water"},{"q":5,"r":-9,"type":"water"},{"q":5,"r":-8,"type":"water"},{"q":5,"r":-7,"type":"water"},{"q":5,"r":-6,"type":"water"},{"q":5,"r":-5,"type":"water"},{"q":5,"r":-4,"type":"fairway"},{"q":5,"r":-3,"type":"fairway"},{"q":5,"r":-2,"type":"fairway"},{"q":5,"r":-1,"type":"fairway"},{"q":5,"r":0,"type":"fairway"},{"q":5,"r":1,"type":"water"},{"q":5,"r":2,"type":"water"},{"q":5,"r":3,"type":"water"},{"q":5,"r":4,"type":"water"},{"q":6,"r":-9,"type":"water"},{"q":6,"r":-8,"type":"water"},{"q":6,"r":-7,"type":"water"},{"q":6,"r":-6,"type":"water"},{"q":6,"r":-5,"type":"water"},{"q":6,"r":-4,"type":"water"},{"q":6,"r":-3,"type":"water"},{"q":6,"r":-2,"type":"water"},{"q":6,"r":-1,"type":"water"},{"q":6,"r":0,"type":"water"},{"q":6,"r":1,"type":"water"},{"q":6,"r":2,"type":"water"},{"q":6,"r":3,"type":"water"},{"q":7,"r":-9,"type":"water"},{"q":7,"r":-8,"type":"water"},{"q":7,"r":-7,"type":"water"},{"q":7,"r":-6,"type":"water"},{"q":7,"r":-5,"type":"water"},{"q":7,"r":-4,"type":"water"},{"q":7,"r":-3,"type":"water"},{"q":7,"r":-2,"type":"water"},{"q":7,"r":-1,"type":"water"},{"q":7,"r":0,"type":"water"},{"q":7,"r":1,"type":"water"},{"q":7,"r":2,"type":"water"},{"q":8,"r":-9,"type":"water"},{"q":8,"r":-8,"type":"water"},{"q":8,"r":-7,"type":"water"},{"q":8,"r":-6,"type":"water"},{"q":8,"r":-5,"type":"water"},{"q":8,"r":-4,"type":"water"},{"q":8,"r":-3,"type":"water"},{"q":8,"r":-2,"type":"water"},{"q":8,"r":-1,"type":"water"},{"q":8,"r":0,"type":"water"},{"q":8,"r":1,"type":"water"},{"q":9,"r":-9,"type":"water"},{"q":9,"r":-8,"type":"water"},{"q":9,"r":-7,"type":"water"},{"q":9,"r":-6,"type":"water"},{"q":9,"r":-5,"type":"water"},{"q":9,"r":-4,"type":"water"},{"q":9,"r":-3,"type":"water"},{"q":9,"r":-2,"type":"water"},{"q":9,"r":-1,"type":"water"},{"q":9,"r":0,"type":"water"}]},
+        {"name":"The Ridge","tiles":[{"q":-9,"r":0,"type":"rough"},{"q":-9,"r":1,"type":"rough"},{"q":-9,"r":2,"type":"rough"},{"q":-9,"r":3,"type":"rough"},{"q":-9,"r":4,"type":"rough"},{"q":-9,"r":5,"type":"rough"},{"q":-9,"r":6,"type":"rough"},{"q":-9,"r":7,"type":"rough"},{"q":-9,"r":8,"type":"rough"},{"q":-9,"r":9,"type":"rough"},{"q":-8,"r":-1,"type":"rough"},{"q":-8,"r":0,"type":"fairway"},{"q":-8,"r":1,"type":"fairway"},{"q":-8,"r":2,"type":"fairway","arrow":"North-East"},{"q":-8,"r":3,"type":"sand"},{"q":-8,"r":4,"type":"sand"},{"q":-8,"r":5,"type":"sand"},{"q":-8,"r":6,"type":"sand"},{"q":-8,"r":7,"type":"fairway"},{"q":-8,"r":8,"type":"fairway"},{"q":-8,"r":9,"type":"rough"},{"q":-7,"r":-2,"type":"rough"},{"q":-7,"r":-1,"type":"fairway"},{"q":-7,"r":0,"type":"green"},{"q":-7,"r":1,"type":"green"},{"q":-7,"r":2,"type":"fairway","arrow":"North-East"},{"q":-7,"r":3,"type":"sand"},{"q":-7,"r":4,"type":"sand"},{"q":-7,"r":5,"type":"sand"},{"q":-7,"r":6,"type":"fairway","arrow":"South-East"},{"q":-7,"r":7,"type":"green"},{"q":-7,"r":8,"type":"fairway"},{"q":-7,"r":9,"type":"rough"},{"q":-6,"r":-3,"type":"rough"},{"q":-6,"r":-2,"type":"fairway"},{"q":-6,"r":-1,"type":"green"},{"q":-6,"r":0,"type":"green"},{"q":-6,"r":1,"type":"green"},{"q":-6,"r":2,"type":"fairway","arrow":"North-East"},{"q":-6,"r":3,"type":"sand"},{"q":-6,"r":4,"type":"sand"},{"q":-6,"r":5,"type":"fairway","arrow":"South-East"},{"q":-6,"r":6,"type":"green"},{"q":-6,"r":7,"type":"green"},{"q":-6,"r":8,"type":"fairway"},{"q":-6,"r":9,"type":"rough"},{"q":-5,"r":-4,"type":"rough"},{"q":-5,"r":-3,"type":"fairway"},{"q":-5,"r":-2,"type":"green"},{"q":-5,"r":-1,"type":"green"},{"q":-5,"r":0,"type":"green"},{"q":-5,"r":1,"type":"green"},{"q":-5,"r":2,"type":"fairway","arrow":"North-East"},{"q":-5,"r":3,"type":"fairway","arrow":"South-East"},{"q":-5,"r":4,"type":"fairway","arrow":"South-East"},{"q":-5,"r":5,"type":"green"},{"q":-5,"r":6,"type":"green"},{"q":-5,"r":7,"type":"green"},{"q":-5,"r":8,"type":"fairway","arrow":"South-East"},{"q":-5,"r":9,"type":"rough","arrow":"South-East"},{"q":-4,"r":-5,"type":"rough","arrow":"South"},{"q":-4,"r":-4,"type":"fairway","arrow":"South"},{"q":-4,"r":-3,"type":"green"},{"q":-4,"r":-2,"type":"green"},{"q":-4,"r":-1,"type":"green"},{"q":-4,"r":0,"type":"green"},{"q":-4,"r":1,"type":"green","arrow":"North"},{"q":-4,"r":2,"type":"green"},{"q":-4,"r":3,"type":"green"},{"q":-4,"r":4,"type":"green"},{"q":-4,"r":5,"type":"green"},{"q":-4,"r":6,"type":"green"},{"q":-4,"r":7,"type":"green","arrow":"South-East"},{"q":-4,"r":8,"type":"fairway","arrow":"South-East"},{"q":-4,"r":9,"type":"rough","arrow":"South-East"},{"q":-3,"r":-6,"type":"rough"},{"q":-3,"r":-5,"type":"fairway","arrow":"South"},{"q":-3,"r":-4,"type":"fairway","arrow":"South"},{"q":-3,"r":-3,"type":"green"},{"q":-3,"r":-2,"type":"green"},{"q":-3,"r":-1,"type":"green"},{"q":-3,"r":0,"type":"green","arrow":"North-West"},{"q":-3,"r":1,"type":"green"},{"q":-3,"r":2,"type":"green"},{"q":-3,"r":3,"type":"green"},{"q":-3,"r":4,"type":"green"},{"q":-3,"r":5,"type":"green"},{"q":-3,"r":6,"type":"green","arrow":"South-East"},{"q":-3,"r":7,"type":"green"},{"q":-3,"r":8,"type":"fairway"},{"q":-3,"r":9,"type":"water"},{"q":-2,"r":-7,"type":"rough"},{"q":-2,"r":-6,"type":"fairway","arrow":"South-West"},{"q":-2,"r":-5,"type":"fairway","arrow":"South-West"},{"q":-2,"r":-4,"type":"green","arrow":"South-West"},{"q":-2,"r":-3,"type":"green","arrow":"South-West"},{"q":-2,"r":-2,"type":"green","arrow":"North-West"},{"q":-2,"r":-1,"type":"green","arrow":"North-West"},{"q":-2,"r":0,"type":"green"},{"q":-2,"r":1,"type":"green"},{"q":-2,"r":2,"type":"green"},{"q":-2,"r":3,"type":"green"},{"q":-2,"r":4,"type":"green","arrow":"South-East"},{"q":-2,"r":5,"type":"green","arrow":"South-East"},{"q":-2,"r":6,"type":"green"},{"q":-2,"r":7,"type":"green"},{"q":-2,"r":8,"type":"water"},{"q":-2,"r":9,"type":"water"},{"q":-1,"r":-8,"type":"rough"},{"q":-1,"r":-7,"type":"sand"},{"q":-1,"r":-6,"type":"fairway","arrow":"South"},{"q":-1,"r":-5,"type":"fairway","arrow":"South-West"},{"q":-1,"r":-4,"type":"green","arrow":"South"},{"q":-1,"r":-3,"type":"green"},{"q":-1,"r":-2,"type":"green"},{"q":-1,"r":-1,"type":"green"},{"q":-1,"r":0,"type":"green"},{"q":-1,"r":1,"type":"green"},{"q":-1,"r":2,"type":"green"},{"q":-1,"r":3,"type":"green","arrow":"South-East"},{"q":-1,"r":4,"type":"green"},{"q":-1,"r":5,"type":"green"},{"q":-1,"r":6,"type":"green"},{"q":-1,"r":7,"type":"water"},{"q":-1,"r":8,"type":"water"},{"q":-1,"r":9,"type":"water"},{"q":0,"r":-9,"type":"rough"},{"q":0,"r":-8,"type":"sand"},{"q":0,"r":-7,"type":"sand"},{"q":0,"r":-6,"type":"fairway","arrow":"South"},{"q":0,"r":-5,"type":"fairway","arrow":"South"},{"q":0,"r":-4,"type":"green"},{"q":0,"r":-3,"type":"green"},{"q":0,"r":-2,"type":"green"},{"q":0,"r":-1,"type":"green"},{"q":0,"r":0,"type":"green"},{"q":0,"r":1,"type":"green","arrow":"South-East"},{"q":0,"r":2,"type":"green","arrow":"South-East"},{"q":0,"r":3,"type":"green"},{"q":0,"r":4,"type":"green"},{"q":0,"r":5,"type":"green"},{"q":0,"r":6,"type":"green"},{"q":0,"r":7,"type":"water"},{"q":0,"r":8,"type":"water"},{"q":0,"r":9,"type":"water"},{"q":1,"r":-9,"type":"rough"},{"q":1,"r":-8,"type":"sand"},{"q":1,"r":-7,"type":"fairway"},{"q":1,"r":-6,"type":"fairway","arrow":"South"},{"q":1,"r":-5,"type":"green","arrow":"South"},{"q":1,"r":-4,"type":"green"},{"q":1,"r":-3,"type":"green"},{"q":1,"r":-2,"type":"green"},{"q":1,"r":-1,"type":"green"},{"q":1,"r":0,"type":"green","arrow":"South-East"},{"q":1,"r":1,"type":"green"},{"q":1,"r":2,"type":"green"},{"q":1,"r":3,"type":"green"},{"q":1,"r":4,"type":"green"},{"q":1,"r":5,"type":"green"},{"q":1,"r":6,"type":"water"},{"q":1,"r":7,"type":"water"},{"q":1,"r":8,"type":"water"},{"q":2,"r":-9,"type":"rough"},{"q":2,"r":-8,"type":"fairway"},{"q":2,"r":-7,"type":"fairway","arrow":"South"},{"q":2,"r":-6,"type":"fairway","arrow":"South"},{"q":2,"r":-5,"type":"green"},{"q":2,"r":-4,"type":"green"},{"q":2,"r":-3,"type":"green"},{"q":2,"r":-2,"type":"green"},{"q":2,"r":-1,"type":"green","arrow":"South"},{"q":2,"r":0,"type":"green"},{"q":2,"r":1,"type":"green"},{"q":2,"r":2,"type":"green"},{"q":2,"r":3,"type":"green"},{"q":2,"r":4,"type":"green"},{"q":2,"r":5,"type":"water"},{"q":2,"r":6,"type":"water"},{"q":2,"r":7,"type":"water"},{"q":3,"r":-9,"type":"rough"},{"q":3,"r":-8,"type":"fairway","arrow":"South"},{"q":3,"r":-7,"type":"fairway","arrow":"South"},{"q":3,"r":-6,"type":"green","arrow":"South"},{"q":3,"r":-5,"type":"green"},{"q":3,"r":-4,"type":"green"},{"q":3,"r":-3,"type":"green"},{"q":3,"r":-2,"type":"green","arrow":"South"},{"q":3,"r":-1,"type":"green"},{"q":3,"r":0,"type":"green"},{"q":3,"r":1,"type":"green"},{"q":3,"r":2,"type":"water"},{"q":3,"r":3,"type":"water"},{"q":3,"r":4,"type":"water"},{"q":3,"r":5,"type":"water"},{"q":3,"r":6,"type":"water"},{"q":4,"r":-9,"type":"rough"},{"q":4,"r":-8,"type":"fairway","arrow":"South"},{"q":4,"r":-7,"type":"fairway","arrow":"South"},{"q":4,"r":-6,"type":"green"},{"q":4,"r":-5,"type":"green"},{"q":4,"r":-4,"type":"green"},{"q":4,"r":-3,"type":"green","arrow":"South"},{"q":4,"r":-2,"type":"green"},{"q":4,"r":-1,"type":"green"},{"q":4,"r":0,"type":"green"},{"q":4,"r":1,"type":"green"},{"q":4,"r":2,"type":"water"},{"q":4,"r":3,"type":"water"},{"q":4,"r":4,"type":"water"},{"q":4,"r":5,"type":"water"},{"q":5,"r":-9,"type":"rough"},{"q":5,"r":-8,"type":"fairway","arrow":"South"},{"q":5,"r":-7,"type":"green"},{"q":5,"r":-6,"type":"green"},{"q":5,"r":-5,"type":"green"},{"q":5,"r":-4,"type":"green"},{"q":5,"r":-3,"type":"green","arrow":"South"},{"q":5,"r":-2,"type":"green"},{"q":5,"r":-1,"type":"green"},{"q":5,"r":0,"type":"green"},{"q":5,"r":1,"type":"water"},{"q":5,"r":2,"type":"water"},{"q":5,"r":3,"type":"water"},{"q":5,"r":4,"type":"water"},{"q":6,"r":-9,"type":"rough"},{"q":6,"r":-8,"type":"fairway","arrow":"South-West"},{"q":6,"r":-7,"type":"green"},{"q":6,"r":-6,"type":"green"},{"q":6,"r":-5,"type":"green"},{"q":6,"r":-4,"type":"green","arrow":"South"},{"q":6,"r":-3,"type":"green"},{"q":6,"r":-2,"type":"green"},{"q":6,"r":-1,"type":"green"},{"q":6,"r":0,"type":"green"},{"q":6,"r":1,"type":"water"},{"q":6,"r":2,"type":"water"},{"q":6,"r":3,"type":"water"},{"q":7,"r":-9,"type":"rough"},{"q":7,"r":-8,"type":"fairway"},{"q":7,"r":-7,"type":"green"},{"q":7,"r":-6,"type":"green"},{"q":7,"r":-5,"type":"green","arrow":"South"},{"q":7,"r":-4,"type":"green"},{"q":7,"r":-3,"type":"green"},{"q":7,"r":-2,"type":"green"},{"q":7,"r":-1,"type":"green"},{"q":7,"r":0,"type":"water"},{"q":7,"r":1,"type":"water"},{"q":7,"r":2,"type":"water"},{"q":8,"r":-9,"type":"rough"},{"q":8,"r":-8,"type":"fairway"},{"q":8,"r":-7,"type":"fairway"},{"q":8,"r":-6,"type":"fairway","arrow":"South"},{"q":8,"r":-5,"type":"fairway","arrow":"South"},{"q":8,"r":-4,"type":"water"},{"q":8,"r":-3,"type":"water"},{"q":8,"r":-2,"type":"water"},{"q":8,"r":-1,"type":"water"},{"q":8,"r":0,"type":"water"},{"q":8,"r":1,"type":"water"},{"q":9,"r":-9,"type":"rough"},{"q":9,"r":-8,"type":"rough"},{"q":9,"r":-7,"type":"rough","arrow":"South"},{"q":9,"r":-6,"type":"rough","arrow":"South"},{"q":9,"r":-5,"type":"water"},{"q":9,"r":-4,"type":"water"},{"q":9,"r":-3,"type":"water"},{"q":9,"r":-2,"type":"water"},{"q":9,"r":-1,"type":"water"},{"q":9,"r":0,"type":"water"}]}
+    ];
+
+    let lobbyConfig = { holeOptions: [3, 6, 9, 18], holeIndex: 0, mapIndex: 0 };
+    let lobbySlots = [
+        { type: 'Human', name: 'Player 1', color: CONFIG.COLORS.defaultSlot[0], difficulty: 'Medium' },
+        { type: 'Bot', name: 'Player 2', color: CONFIG.COLORS.defaultSlot[1], difficulty: 'Medium' },
+        { type: 'None', name: 'Player 3', color: CONFIG.COLORS.defaultSlot[2], difficulty: 'Medium' },
+        { type: 'None', name: 'Player 4', color: CONFIG.COLORS.defaultSlot[3], difficulty: 'Medium' }
+    ];
+
+    function renderLobbyMaps() {
+        const select = document.getElementById('lobby-map-select');
+        select.innerHTML = '';
+        MAP_COLLECTION.forEach((m, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = m.name;
+            select.appendChild(opt);
+        });
+        select.onchange = (e) => lobbyConfig.mapIndex = parseInt(e.target.value);
+    }
+
+    function renderLobbySlots() {
+        const container = document.getElementById('lobby-slots-container');
+        container.innerHTML = '';
+        lobbySlots.forEach((slot, i) => {
+            const row = document.createElement('div');
+            row.className = 'slot-row';
+
+            const selType = document.createElement('select');
+            selType.className = 'slot-input'; selType.style.width = '30%';
+            ['Human', 'Bot', 'None'].forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t; opt.textContent = t;
+                if (t === 'None' && i === 0) opt.disabled = true;
+                if (slot.type === t) opt.selected = true;
+                selType.appendChild(opt);
+            });
+            selType.onchange = (e) => { slot.type = e.target.value; renderLobbySlots(); };
+            row.appendChild(selType);
+
+            if (slot.type === 'Human') {
+                const inp = document.createElement('input');
+                inp.type = 'text'; inp.className = 'slot-input'; inp.style.width = '50%';
+                inp.value = slot.name; inp.placeholder = 'Name';
+                inp.onchange = (e) => slot.name = e.target.value;
+                row.appendChild(inp);
+            } else if (slot.type === 'Bot') {
+                const selDiff = document.createElement('select');
+                selDiff.className = 'slot-input'; selDiff.style.width = '50%';
+                ['Easy', 'Medium', 'Hard', 'Impossible'].forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d; opt.textContent = d;
+                    if (slot.difficulty === d) opt.selected = true;
+                    selDiff.appendChild(opt);
+                });
+                selDiff.onchange = (e) => slot.difficulty = e.target.value;
+                row.appendChild(selDiff);
+            } else {
+                const div = document.createElement('div'); div.style.width = '50%';
+                row.appendChild(div);
+            }
+
+            if (slot.type !== 'None') {
+                const col = document.createElement('input');
+                col.type = 'color'; col.className = 'slot-color';
+                col.value = slot.color;
+                col.onchange = (e) => slot.color = e.target.value;
+                row.appendChild(col);
+            } else {
+                const div = document.createElement('div'); div.style.width = '40px';
+                row.appendChild(div);
+            }
+            container.appendChild(row);
+        });
+    }
+
+    function updateLobbyHoles(change) {
+        lobbyConfig.holeIndex = (lobbyConfig.holeIndex + change + lobbyConfig.holeOptions.length) % lobbyConfig.holeOptions.length;
+        document.getElementById('lobby-holes').innerText = lobbyConfig.holeOptions[lobbyConfig.holeIndex];
+    }
+
+    function startRound() {
+        let activeSlots = lobbySlots.filter(s => s.type !== 'None');
+        if (activeSlots.length === 0) return; 
+        const selectedMap = MAP_COLLECTION[lobbyConfig.mapIndex];
+        if (!selectedMap || !Array.isArray(selectedMap.tiles)) {
+            alert('Invalid Map Selection'); return;
+        }
+
+        document.getElementById('landing-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        
+        GameController.setupPlayersFromLobby(activeSlots, lobbyConfig.holeOptions[lobbyConfig.holeIndex]);
+        GameController.startRound(selectedMap);
+    }
+
+    document.addEventListener('click', (e) => {
+        const actionEl = e.target.closest('[data-action]');
+        if (actionEl) {
+            const action = actionEl.getAttribute('data-action');
+            const val = actionEl.getAttribute('data-val');
+            
+            if (action === 'updateLobbyHoles') updateLobbyHoles(parseInt(val));
+            else if (action === 'startRound') startRound();
+            else if (action === 'startEditor') EditorController.start();
+            else if (action === 'showTutorial') document.getElementById('tutorial-modal').style.display = 'flex';
+            else if (action === 'hideTutorial') document.getElementById('tutorial-modal').style.display = 'none';
+            else if (action === 'toggleScorecard') GameController.toggleScorecard();
+            else if (action === 'setShape') GameController.setShape(val);
+            else if (action === 'setTrajectory') GameController.setTrajectory(val);
+            else if (action === 'lockShot') GameController.lockShot();
+            else if (action === 'nextHole') GameController.nextHole();
+            else if (action === 'editorSetMode') EditorController.setMode(val);
+            else if (action === 'editorExport') EditorController.export();
+            else if (action === 'editorExit') EditorController.exit();
+            else if (action === 'exportCopy') EditorController.copyExport();
+            else if (action === 'exportClose') EditorController.closeExport();
+            return;
+        }
+
+        const hex = e.target.closest('.hex');
+        if (hex) {
+            const q = parseInt(hex.getAttribute('data-q'));
+            const r = parseInt(hex.getAttribute('data-r'));
+            if (!isNaN(q) && !isNaN(r)) {
+                if (document.getElementById('editor-toolbar').style.display === 'flex') {
+                    EditorController.onHexClick(q, r);
+                } else {
+                    GameController.selectTarget(q, r);
+                }
+            }
+        }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+        renderLobbyMaps();
+        renderLobbySlots();
+    });
+
+    })();
+  </script>
+</body>
+</html>
