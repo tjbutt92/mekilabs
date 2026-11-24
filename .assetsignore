@@ -1,0 +1,34 @@
+# Assets directory is the repo root (wrangler.jsonc "directory": ".").
+# Workers uploads every file there, and a single asset cannot exceed 25 MiB.
+# CI clones include .git/objects/pack, which is over that limit.
+
+.git
+.git/
+**/.git
+**/.git/**
+*.pack
+
+node_modules
+node_modules/
+**/node_modules/**
+
+.wrangler
+.wrangler/
+
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*.log
+
+CursorUserSetup*.exe
+*.exe
+
+tailwind.input.css
